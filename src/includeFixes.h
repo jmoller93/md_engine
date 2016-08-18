@@ -9,6 +9,7 @@
 #include "FixImproperCVFF.h"
 #include "FixDihedralOPLS.h"
 #include "FixDihedralCHARMM.h"
+#include "FixDihedralGauss.h"
 #include "FixLJCut.h"
 #include "FixLJCutFS.h"
 #include "FixTICG.h"
