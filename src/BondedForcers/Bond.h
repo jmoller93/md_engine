@@ -121,6 +121,49 @@ void export_BondFENE();
 //end bond fene classes
 
 
+//bond Golike classes
+//
+class BondGoLikeType {
+public:
+    float eps;
+    float sig;
+    BondGoLikeType(){};
+    bool operator==(const BondGoLikeType &) const;
+    std::string getInfoString();
+};
+//
+//for forcer maps
+namespace std {
+    template<> struct hash<BondGoLikeType> {
+        size_t operator() (BondGoLikeType const& bond) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, bond.eps);
+            boost::hash_combine(seed, bond.sig);
+            return seed;
+        }
+    };
+}
+
+/*! \brief Bond with a GoLike potential
+ *
+ *
+ */
+
+
+
+
+
+class BondGoLike: public Bond, public BondGoLikeType {
+public:
+    BondGoLike(Atom *a, Atom *b, double eps_, double sig_, int type_=-1);
+    BondGoLike(double eps_, double sig_, int type_=-1); 
+    BondGoLike(){};
+    int type;
+	std::string getInfoString();
+};	
+
+void export_BondGoLike();
+//end bond golike classes
 
 class __align__(16) BondGPU {
     public:
@@ -136,6 +179,7 @@ class __align__(16) BondGPU {
 typedef boost::variant<
 	BondHarmonic, 
     BondFENE,
+    BondGoLike,
 	Bond
 > BondVariant;
 

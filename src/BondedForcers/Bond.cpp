@@ -113,3 +113,47 @@ void export_BondFENE() {
         .def_readwrite("sig", &BondFENE::sig)
     ;
 }
+
+//bond GoLike
+bool BondGoLikeType::operator==(const BondGoLikeType &other) const {
+    return eps == other.eps and sig == other.sig;
+}
+
+
+
+
+
+BondGoLike::BondGoLike(Atom *a, Atom *b, double eps_, double sig_, int type_) {
+    ids[0] = a->id;
+    ids[1] = b->id;
+    eps = eps_;
+    sig = sig_;
+    type = type_;
+}
+BondGoLike::BondGoLike(double eps_, double sig_, int type_) {
+    eps = eps_;
+    sig = sig_;
+    type = type_;
+}
+
+std::string BondGoLikeType::getInfoString() {
+  std::stringstream ss;
+  ss << "' eps='" << eps << "' sig='" << sig;
+  return ss.str();
+}
+
+std::string BondGoLike::getInfoString() {
+  std::stringstream ss;
+  ss << "<member type='" << type << "' eps='" << eps << "' sig='" << sig << "' atomID_a='" << ids[0] <<  "' atomID_b='" << ids[1] << "'/>\n";
+  return ss.str();
+}
+
+void export_BondGoLike() {
+  
+    py::class_<BondGoLike,SHARED(BondGoLike)> ( "BondGoLike", py::init<>())
+//         .def(py::init<int, int ,double, double,int>())
+        .def_readonly("ids", &BondGoLike::ids)
+        .def_readwrite("eps", &BondGoLike::eps)
+        .def_readwrite("sig", &BondGoLike::sig)
+    ;
+}
