@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <array>
 class DihedralOPLS;
+class DihedralGauss;
 void export_Dihedrals();
 class Dihedral{
     public:
@@ -61,8 +62,43 @@ namespace std {
 
 }
 
+//Start 3SPN.2 Gaussian dihedrals
+class DihedralGaussType {
+    public:
+        float phi0;
+        float sigma;
+        float k0;
+        DihedralGaussType(DihedralGauss *);
+        DihedralGaussType(){};
+        bool operator==(const DihedralGaussType &) const;
+	std::string getInfoString();
+};
+
+class DihedralGauss : public Dihedral, public DihedralGaussType {
+    public: 
+        DihedralGauss(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k0_, int type_);
+        DihedralGauss(double phi0_, double sigma_, double k0_, int type_);
+        DihedralGauss(){};
+	std::string getInfoString();
+};
+
+namespace std {
+    template<> struct hash<DihedralGaussType> {
+        size_t operator() (DihedralGaussType const& dih) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, dih.phi0);
+            boost::hash_combine(seed, dih.sigma);
+            boost::hash_combine(seed, dih.k0);
+            return seed;
+        }
+    };
+
+
+}
+
 typedef boost::variant<
-	DihedralOPLS, 
+	DihedralOPLS,
+    DihedralGauss,
     Dihedral	
 > DihedralVariant;
 #endif
