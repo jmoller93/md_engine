@@ -8,6 +8,7 @@
 #include "FixAngleCosineDelta.h"
 #include "FixImproperHarmonic.h"
 #include "FixDihedralOPLS.h"
+#include "FixDihedralGauss.h"
 #include "FixLJCut.h"
 #include "FixLJCutFS.h"
 #include "FixTICG.h"
