@@ -6,6 +6,7 @@
 #include "FixBondHarmonic.h"
 #include "FixBondFENE.h"
 #include "FixAngleBaseStacking.h"
+#include "FixBondGoLike.h"
 #include "FixAngleHarmonic.h"
 #include "FixAngleCosineDelta.h"
 #include "FixImproperHarmonic.h"
