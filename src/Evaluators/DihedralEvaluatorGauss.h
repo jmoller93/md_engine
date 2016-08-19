@@ -14,6 +14,11 @@ class DihedralEvaluatorGauss {
             float diffPhi = phi-dihedralType.phi0;
             //float absDiffPhi = diffPhi < - ? -sinPhi : sinPhi;
             float invSigma = 1.0f / (2.0f * dihedralType.sigma * dihedralType.sigma);
+
+            //Ensure periodic CV conditions
+            if (diffPhi > M_PI) {diffPhi -= 2*M_PI;}
+            else if (diffPhi < -M_PI) {diffPhi += 2*M_PI;}
+
             float derivOfPotential = (
                     dihedralType.k0 
                     * diffPhi * expf( - diffPhi * diffPhi * invSigma) / (dihedralType.sigma * dihedralType.sigma)
