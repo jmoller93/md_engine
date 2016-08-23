@@ -184,3 +184,71 @@ void export_AngleCosineDelta() {
 
     ;
 }
+
+
+//3SP.2 Angle base stacking
+
+AngleBaseStacking::AngleBaseStacking(Atom *a, Atom *b, Atom *c, double k_, double theta0_, double epsi_, double sigma_, double alpha_, int type_) {
+    ids[0] = a->id;
+    ids[1] = b->id;
+    ids[2] = c->id;
+    k = k_;
+    theta0 = theta0_;
+    epsi = epsi_;
+    sigma = sigma_;
+    alpha = alpha_;
+    type = type_;
+}
+
+
+
+AngleBaseStacking::AngleBaseStacking(double k_, double theta0_, double epsi_, double sigma_, double alpha_, int type_) {
+    for (int i=0; i<3; i++) {
+        ids[i] = -1;
+    }
+    k = k_;
+    theta0 = theta0_;
+    epsi = epsi_;
+    sigma = sigma_;
+    alpha = alpha_;
+    type = type_;
+}
+
+
+
+AngleBaseStackingType::AngleBaseStackingType(AngleBaseStacking *angle) {
+    k = angle->k;
+    theta0 = angle->theta0;
+    epsi = angle->epsi;
+    sigma = angle->sigma;
+    alpha = angle->alpha;
+}
+
+std::string AngleBaseStackingType::getInfoString() {
+  std::stringstream ss;
+  ss << " k='" << k << "' theta0='" << theta0 << "' epsi='" << epsi << "' sigma='" << sigma << "' alpha='" << alpha;
+  return ss.str();
+}
+
+std::string AngleBaseStacking::getInfoString() {
+  std::stringstream ss;
+  ss << "<member type='" << type << "' k='" << k << "' theta0='" << theta0 << "' epsi='" << epsi << "' sigma='" << sigma << "' alpha='" << alpha << "' atomID_a='" << ids[0] << "' atomID_b='" << ids[1] << "' atomID_c\
+='" << ids[2] << "'/>\n";
+  return ss.str();
+}
+
+bool AngleBaseStackingType::operator==(const AngleBaseStackingType &other) const {
+    return k == other.k and theta0 == other.theta0 and epsi == other.epsi and sigma == other.sigma and alpha == other.alpha;
+}
+void export_AngleBaseStacking() {
+    boost::python::class_<AngleBaseStacking, SHARED(AngleBaseStacking)> ( "AngleBaseStacking", boost::python::init<>())
+        .def_readwrite("theta0", &AngleBaseStacking::theta0)
+        .def_readwrite("k", &AngleBaseStacking::k)
+        .def_readwrite("epsi", &AngleBaseStacking::epsi)
+        .def_readwrite("sigma", &AngleBaseStacking::sigma)
+        .def_readwrite("alpha", &AngleBaseStacking::alpha)
+        .def_readwrite("type", &AngleBaseStacking::type)
+        .def_readonly("ids", &AngleBaseStacking::ids)
+
+    ;
+}

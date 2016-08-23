@@ -10,9 +10,11 @@
 class AngleHarmonic;
 class AngleCHARMM;
 class AngleCosineDelta;
+class AngleBaseStacking;
 void export_AngleHarmonic();
 void export_AngleCHARMM();
 void export_AngleCosineDelta();
+void export_AngleBaseStacking();
 
 class Angle {
     public:
@@ -133,11 +135,53 @@ namespace std {
 
 
 
+//angle base stacking (3SPN2)
+class AngleBaseStackingType {
+public:
+    float k;
+    float theta0;
+    float epsi;
+    float sigma;
+    float alpha;
+    AngleBaseStackingType(AngleBaseStacking *);
+    AngleBaseStackingType(){};
+    bool operator==(const AngleBaseStackingType &) const;
+	std::string getInfoString();
+};
+
+class AngleBaseStacking : public Angle, public AngleBaseStackingType {
+public:
+    AngleBaseStacking(Atom *a, Atom *b, Atom *c, double k_, double theta0_, double epsi_, double sigma_, double alpha_, int type_=-1);
+    AngleBaseStacking(double k_, double theta0_, double epsi_, double sigma_, double alpha_, int type_=-1); 
+    AngleBaseStacking(){};
+    int type;
+	std::string getInfoString();
+};
+
+//for forcer maps
+namespace std {
+    template<> struct hash<AngleBaseStackingType> {
+        size_t operator() (AngleBaseStackingType const& ang) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, ang.k);
+            boost::hash_combine(seed, ang.theta0);
+            boost::hash_combine(seed, ang.epsi);
+            boost::hash_combine(seed, ang.sigma);
+            boost::hash_combine(seed, ang.alpha);
+            return seed;
+        }
+    };
+}
+
+
+
+
 // lets us store a list of vectors to any kind of angles we want
 typedef boost::variant<
 	AngleHarmonic, 
 	AngleCHARMM, 
     AngleCosineDelta,
+    AngleBaseStacking,
     Angle	
 > AngleVariant;
 #endif
