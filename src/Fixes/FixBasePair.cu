@@ -27,9 +27,9 @@ void FixBasePair::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_dihedral<BasePairType, BasePairEvaluator, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePairType, BasePairEvaluator, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     } else {
-        compute_force_dihedral<BasePairType, BasePairEvaluator, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePairType, BasePairEvaluator, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     }
 
 }
@@ -46,15 +46,15 @@ void FixBasePair::singlePointEng(float *perParticleEng) {
 
 
 
-void FixBasePair::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double k, double epsi, double alpha, int type) {
+void FixBasePair::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2, int type) {
     if (type==-1) {
-            assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k!=COEF_DEFAULT and epsi!=COEF_DEFAULT and alpha!=COEF_DEFAULT);
+            assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k!=COEF_DEFAULT and epsi!=COEF_DEFAULT and alpha!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
     }
-    forcers.push_back(BasePair(a, b, c, d, phi0, sigma, k, epsi, alpha, type));
+    forcers.push_back(BasePair(a, b, c, d, phi0, sigma, k, epsi, alpha, type, theta1, theta2));
     pyListInterface.updateAppendedMember();
 }
 
-void FixBasePair::setBasePairTypeCoefs(int type, double phi0, double sigma, double k, double epsi, double alpha) {
+void FixBasePair::setBasePairTypeCoefs(int type, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2) {
     assert(sigma>0);
     BasePair dummy(phi0, sigma, k, epsi, alpha, type);
     setForcerType(type, dummy);
@@ -72,6 +72,8 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
         double k;
         double epsi;
         double alpha;
+        double theta1;
+        double theta2;
         std::string type_ = type_node.attribute("id").value();
         type = atoi(type_.c_str());
         std::string phi0_ = type_node.attribute("phi0").value();
@@ -79,12 +81,17 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
         std::string k_ = type_node.attribute("k").value();
         std::string epsi_ = type_node.attribute("epsi").value();
         std::string alpha_ = type_node.attribute("alpha").value();
+        std::string theta1_ = type_node.attribute("theta1").value();
+        std::string theta2_ = type_node.attribute("theta2").value();
         phi0 = atof(phi0_.c_str());
         sigma = atof(sigma_.c_str());
         k     = atof(k_.c_str());
         epsi  = atof(epsi_.c_str());
         alpha = atof(alpha_.c_str());
-        BasePair dummy(phi0, sigma, k, epsi, alpha, type);
+        alpha = atof(alpha_.c_str());
+        theta1= atof(theta1_.c_str());
+        theta2= atof(theta2_.c_str());
+        BasePair dummy(phi0, sigma, k, epsi, alpha, theta1, theta2, type);
         setForcerType(type, dummy);
       }
     } else if (tag == "members") {
@@ -95,6 +102,8 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
     double k;
     double epsi;
     double alpha;
+    double theta1;
+    double theta2;
 	int ids[4];
 	std::string type_ = member_node.attribute("type").value();
 	std::string atom_a = member_node.attribute("atomID_a").value();
@@ -106,6 +115,8 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
 	std::string k_     = member_node.attribute("k").value();
 	std::string epsi_  = member_node.attribute("epsi").value();
 	std::string alpha_ = member_node.attribute("alpha").value();
+	std::string theta1_ = member_node.attribute("theta1").value();
+	std::string theta2_ = member_node.attribute("theta2").value();
 	type = atoi(type_.c_str());
 	ids[0] = atoi(atom_a.c_str());
 	ids[1] = atoi(atom_b.c_str());
@@ -116,6 +127,8 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
 	k     = atof(k_.c_str());
 	epsi  = atof(epsi_.c_str());
 	alpha = atof(alpha_.c_str());
+    theta1= atof(theta1_.c_str());
+    theta2= atof(theta2_.c_str());
 	Atom * a = &state->idToAtom(ids[0]);
 	Atom * b = &state->idToAtom(ids[1]);
 	Atom * c = &state->idToAtom(ids[2]);
@@ -124,7 +137,7 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
 	if (b == NULL) {cout << "The second atom does not exist" <<endl; return false;};
 	if (c == NULL) {cout << "The third atom does not exist" <<endl; return false;};
 	if (d == NULL) {cout << "The fourth atom does not exist" <<endl; return false;};
-	createBasePair(a, b, c, d, phi0, sigma, k, epsi, alpha, type);
+	createBasePair(a, b, c, d, phi0, sigma, k, epsi, alpha, theta1, theta2, type);
       }
     }
     curr_node = curr_node.next_sibling();
@@ -147,7 +160,9 @@ void export_FixBasePair() {
              py::arg("sigma")=-1,
              py::arg("k")=-1,
              py::arg("epsi")=-1,
-             py::arg("epsi")=-1,
+             py::arg("alpha")=-1,
+             py::arg("theta1")=-1,
+             py::arg("theta2")=-1,
              py::arg("type")=-1)
         )
 
@@ -158,6 +173,8 @@ void export_FixBasePair() {
              py::arg("k"),
              py::arg("epsi"),
              py::arg("alpha"),
+             py::arg("theta1"),
+             py::arg("theta2"),
         )
     .def_readonly("basepairs", &FixBasePair::pyForcers)
 
