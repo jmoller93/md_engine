@@ -2,8 +2,10 @@
 #ifndef INCLUDEFIXES_H
 #define INCLUDEFIXES_H
 
+#include "FixBasePair.h"
 #include "FixBondHarmonic.h"
 #include "FixBondFENE.h"
+#include "FixAngleBaseStacking.h"
 #include "FixAngleHarmonic.h"
 #include "FixAngleCosineDelta.h"
 #include "FixImproperHarmonic.h"
