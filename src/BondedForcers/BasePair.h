@@ -33,6 +33,8 @@ class BasePairType {
         float k;
         float epsi;
         float alpha;
+        float theta1;
+        float theta2;
         BasePairType(BasePair *);
         BasePairType(){};
         bool operator==(const BasePairType &) const;
@@ -41,8 +43,8 @@ class BasePairType {
 
 class BasePair : public BasePair, public BasePairType {
     public: 
-        BasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k_, double epsi_, double alpha_,  int type_);
-        BasePair(double phi0_, double sigma_, double k_, double epsi_, double alpha_, int type_);
+        BasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
+        BasePair(double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
         BasePair(){};
 	std::string getInfoString();
 };
@@ -56,6 +58,8 @@ namespace std {
             boost::hash_combine(seed, bp.k);
             boost::hash_combine(seed, bp.epsi);
             boost::hash_combine(seed, bp.alpha); 
+            boost::hash_combine(seed, bp.theta1); 
+            boost::hash_combine(seed, bp.theta2); 
             return seed;
         }
     };
