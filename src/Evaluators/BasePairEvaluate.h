@@ -1,4 +1,4 @@
-//template <class BASEPAIRTYPE, class EVALUATOR, bool COMPUTEVIRIALS> //don't need BasePairGPU, are all BasePairGPU.  Worry about later 
+template <class BASEPAIRTYPE, class EVALUATOR, bool COMPUTEVIRIALS> //don't need BasePairGPU, are all BasePairGPU.  Worry about later 
 __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters, int nParameters, Virial *virials, EVALUATOR evaluator) {
 
 
@@ -114,7 +114,7 @@ __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, i
                 }
 
 
-                float scValues[2]; //???, is s1, s2, s12 in lammps
+                float scValues[3]; //???, is s1, s2, s12 in lammps
                 for (int i=0; i<3; i++) {
                     float x = max(1 - c12Mags[i]*c12Mags[i], 0.0f);
                     float sqrtVal = max(sqrtf(x), EPSILON);
@@ -159,14 +159,14 @@ __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, i
                 //printf("no force\n");
                 if (COMPUTEVIRIALS) {
                     float3 allForces[4];
-                    evaluator.forcesAll(basepairType, phi, thetas, cVector, dVector, scValues, invLenSqrs, c12Mags, c0, c, invMagProds, c12Mags, invLens, directors, allForces);
+                    evaluator.forcesAll(basepairType, phi, thetas, cVector, dVector, scValues, invLens, invLenSqrs, c12Mags, c0, c, invMagProds, c12Mags, invLens, directors, allForces);
                     computeVirial(sumVirials, allForces[0], directors[0]);
                     computeVirial(sumVirials, allForces[2], directors[1]);
                     computeVirial(sumVirials, allForces[3], directors[1] + directors[2]);
                     forceSum += allForces[myIdxInBasePair];
                     
                 } else {
-                    float3 myForce = evaluator.force(basepairType, phi, thetas, cVector, dVector, scValues, invLenSqrs, c12Mags, c, invMagProds, invLens, directors, myIdxInBasePair);
+                    float3 myForce = evaluator.force(basepairType, phi, thetas, cVector, dVector, scValues, invLens, invLenSqrs, c12Mags, c, invMagProds, invLens, directors, myIdxInBasePair);
                     forceSum += myForce;
                 }
                 
@@ -297,7 +297,7 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
 
 
                 float scValues[2]; //???, is s1, s2, s12 in lammps
-                for (int i=0; i<3; i++) {
+                for (int i=0; i<2; i++) {
                     float x = max(1 - c12Mags[i]*c12Mags[i], 0.0f);
                     float sqrtVal = max(sqrtf(x), EPSILON);
                     scValues[i] = 1.0 / sqrtVal;
@@ -338,7 +338,7 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
                     phi = -phi;
                 }
             
-                energySum += evaluator.energy(dihedralType, phi, thetas, cVector, dVector, scValues, invLenSqrs, c, invMagProds, c12Mags, invLens, directors, myIdxInDihedral);
+                energySum += evaluator.energy(dihedralType, phi, thetas, cVector, dVector, scValues, invLens,  invLenSqrs, c, invMagProds, c12Mags, invLens, directors, myIdxInDihedral);
 
                 
 
