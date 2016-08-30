@@ -8,6 +8,7 @@
 #include <boost/variant.hpp>
 #include <boost/functional/hash.hpp>
 #include <array>
+class BasePair3SPN2;
 void export_BasePairs();
 class BasePair{
     public:
@@ -26,7 +27,7 @@ class BasePairGPU {
 
 };
 
-class BasePairType {
+class BasePair3SPN2Type {
     public:
         float phi0;
         float sigma;
@@ -35,23 +36,23 @@ class BasePairType {
         float alpha;
         float theta1;
         float theta2;
-        BasePairType(BasePair *);
-        BasePairType(){};
-        bool operator==(const BasePairType &) const;
+        BasePair3SPN2Type(BasePair *);
+        BasePair3SPN2Type(){};
+        bool operator==(const BasePair3SPN2Type &) const;
 	std::string getInfoString();
 };
 
-class BasePair : public BasePair, public BasePairType {
+class BasePair3SPN2 : public BasePair, public BasePair3SPN2Type {
     public: 
-        BasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
-        BasePair(double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
-        BasePair(){};
+        BasePair3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
+        BasePair3SPN2(double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
+        BasePair3SPN2(){};
 	std::string getInfoString();
 };
 
 namespace std {
-    template<> struct hash<BasePairType> {
-        size_t operator() (BasePairType const& bp) const {
+    template<> struct hash<BasePair3SPN2Type> {
+        size_t operator() (BasePair3SPN2Type const& bp) const {
             size_t seed = 0;
             boost::hash_combine(seed, bp.phi0);
             boost::hash_combine(seed, bp.sigma);
@@ -68,6 +69,7 @@ namespace std {
 }
 
 typedef boost::variant<
+    BasePair3SPN2,
     BasePair	
 > BasePairVariant;
 #endif
