@@ -27,9 +27,9 @@ void FixBasePair::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_basepair<BasePairType, BasePairEvaluator, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     } else {
-        compute_force_basepair<BasePairType, BasePairEvaluator, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     }
 
 }
@@ -39,7 +39,7 @@ void FixBasePair::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePairType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
@@ -56,7 +56,7 @@ void FixBasePair::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0
 
 void FixBasePair::setBasePairTypeCoefs(int type, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2) {
     assert(sigma>0);
-    BasePair dummy(phi0, sigma, k, epsi, alpha, type);
+    BasePair3SPN2 dummy(phi0, sigma, k, epsi, alpha, type);
     setForcerType(type, dummy);
 }
 
@@ -91,7 +91,7 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
         alpha = atof(alpha_.c_str());
         theta1= atof(theta1_.c_str());
         theta2= atof(theta2_.c_str());
-        BasePair dummy(phi0, sigma, k, epsi, alpha, theta1, theta2, type);
+        BasePair3SPN2 dummy(phi0, sigma, k, epsi, alpha, theta1, theta2, type);
         setForcerType(type, dummy);
       }
     } else if (tag == "members") {

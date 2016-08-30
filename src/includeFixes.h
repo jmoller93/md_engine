@@ -2,7 +2,6 @@
 #ifndef INCLUDEFIXES_H
 #define INCLUDEFIXES_H
 
-#include "FixBasePair.h"
 #include "FixBondHarmonic.h"
 #include "FixBondFENE.h"
 #include "FixAngleBaseStacking.h"
@@ -16,6 +15,7 @@
 #include "FixLJCutFS.h"
 #include "FixTICG.h"
 #include "Fix2d.h"
+#include "FixBasePair.h"
 #include "Fix.h"
 #include "FixNoseHoover.h"
 #include "FixNVTRescale.h"
