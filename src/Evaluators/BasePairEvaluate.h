@@ -338,7 +338,7 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
                     phi = -phi;
                 }
             
-                energySum += evaluator.energy(dihedralType, phi, thetas, cVector, dVector, scValues, invLens,  invLenSqrs, c, invMagProds, c12Mags, invLens, directors, myIdxInDihedral);
+                energySum += evaluator.energy(basepairType, phi, thetas, invLens,  invLenSqrs, directors, myIdxInBasePair);
 
                 
 
