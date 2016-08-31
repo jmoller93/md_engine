@@ -47,7 +47,7 @@ void BasePairGPU::takeIds(BasePair *other) {
     }
 }
 
-BasePair3SPN2Type::BasePair3SPN2Type(BasePair *basepair) {
+BasePair3SPN2Type::BasePair3SPN2Type(BasePair3SPN2 *basepair) {
     phi0  = basepair->phi0;
     sigma = basepair->sigma;
     k     = basepair->k;

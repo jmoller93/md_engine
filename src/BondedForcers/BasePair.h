@@ -18,15 +18,6 @@ class BasePair{
         void takeIds(BasePair *);
 };
 
-class BasePairGPU {
-    public:
-        int ids[4];
-        uint32_t type;
-        void takeIds(BasePair *);
-
-
-};
-
 class BasePair3SPN2Type {
     public:
         float phi0;
@@ -36,7 +27,7 @@ class BasePair3SPN2Type {
         float alpha;
         float theta1;
         float theta2;
-        BasePair3SPN2Type(BasePair *);
+        BasePair3SPN2Type(BasePair3SPN2 *);
         BasePair3SPN2Type(){};
         bool operator==(const BasePair3SPN2Type &) const;
 	std::string getInfoString();
@@ -48,6 +39,15 @@ class BasePair3SPN2 : public BasePair, public BasePair3SPN2Type {
         BasePair3SPN2(double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_);
         BasePair3SPN2(){};
 	std::string getInfoString();
+};
+
+class BasePairGPU {
+    public:
+        int ids[4];
+        uint32_t type;
+        void takeIds(BasePair *);
+
+
 };
 
 namespace std {
