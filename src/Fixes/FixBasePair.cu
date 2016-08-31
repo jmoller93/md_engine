@@ -6,10 +6,10 @@
 namespace py = boost::python;
 using namespace std;
 
-const std::string basepairType = "BasePair";
+const std::string basepairType = "BasePair3SPN2";
 
 
-FixBasePair::FixBasePair(SHARED(State) state_, string handle) : FixPotentialMultiAtom (state_, handle, dihedralType, true){
+FixBasePair3SPN2::FixBasePair3SPN2(SHARED(State) state_, string handle) : FixPotentialMultiAtom (state_, handle, basepairType, true){
   if (state->readConfig->fileOpen) {
     auto restData = state->readConfig->readFix(type, handle);
     if (restData) {
@@ -20,47 +20,47 @@ FixBasePair::FixBasePair(SHARED(State) state_, string handle) : FixPotentialMult
 }
 
 
-void FixBasePair::compute(bool computeVirials) {
+void FixBasePair3SPN2::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     } else {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     }
 
 }
 
-void FixBasePair::singlePointEng(float *perParticleEng) {
+void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_basepair<<<NBLOCK(nAtoms), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sizeof(BasePair3SPN2Type) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
 
 
 
-void FixBasePair::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2, int type) {
+void FixBasePair3SPN2::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2, int type) {
     if (type==-1) {
             assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k!=COEF_DEFAULT and epsi!=COEF_DEFAULT and alpha!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
     }
-    forcers.push_back(BasePair(a, b, c, d, phi0, sigma, k, epsi, alpha, type, theta1, theta2));
+    forcers.push_back(BasePair3SPN2(a, b, c, d, phi0, sigma, k, epsi, alpha, type, theta1, theta2));
     pyListInterface.updateAppendedMember();
 }
 
-void FixBasePair::setBasePairTypeCoefs(int type, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2) {
+void FixBasePair3SPN2::setBasePairTypeCoefs(int type, double phi0, double sigma, double k, double epsi, double alpha, double theta1, double theta2) {
     assert(sigma>0);
-    BasePair3SPN2 dummy(phi0, sigma, k, epsi, alpha, type);
+    BasePair3SPN2 dummy(phi0, sigma, k, epsi, alpha, theta1, theta2, type);
     setForcerType(type, dummy);
 }
 
-bool FixBasePair::readFromRestart(pugi::xml_node restData) {
+bool FixBasePair3SPN2::readFromRestart(pugi::xml_node restData) {
   auto curr_node = restData.first_child();
   while (curr_node) {
     string tag = curr_node.name();
@@ -146,16 +146,16 @@ bool FixBasePair::readFromRestart(pugi::xml_node restData) {
 }
 
 
-void export_FixBasePair() {
-    py::class_<FixBasePair,
-                          SHARED(FixBasePair),
+void export_FixBasePair3SPN2() {
+    py::class_<FixBasePair3SPN2,
+                          SHARED(FixBasePair3SPN2),
                           py::bases<Fix, TypedItemHolder> > (
-        "FixBasePair",
+        "FixBasePair3SPN2",
         py::init<SHARED(State), string> (
             py::args("state", "handle")
         )
     )
-    .def("createBasePair", &FixBasePair::createBasePair,
+    .def("createBasePair", &FixBasePair3SPN2::createBasePair,
             (py::arg("phi0")=-1,
              py::arg("sigma")=-1,
              py::arg("k")=-1,
@@ -166,7 +166,7 @@ void export_FixBasePair() {
              py::arg("type")=-1)
         )
 
-    .def("setBasePairTypeCoefs", &FixBasePair::setBasePairTypeCoefs, 
+    .def("setBasePairTypeCoefs", &FixBasePair3SPN2::setBasePairTypeCoefs, 
             (py::arg("type"), 
              py::arg("phi0"),
              py::arg("sigma"),
@@ -174,9 +174,10 @@ void export_FixBasePair() {
              py::arg("epsi"),
              py::arg("alpha"),
              py::arg("theta1"),
-             py::arg("theta2"),
+             py::arg("theta2"))
         )
-    .def_readonly("basepairs", &FixBasePair::pyForcers)
+
+    .def_readonly("basepairs", &FixBasePair3SPN2::pyForcers)
 
     ;
 

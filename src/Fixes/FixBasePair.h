@@ -6,17 +6,17 @@
 #include "BasePair.h"
 #include "BasePairEvaluator.h"
 
-void export_FixBasePair();
+void export_FixBasePair3SPN2();
 
-class FixBasePair : public FixPotentialMultiAtom<BasePairVariant, BasePair3SPN2, BasePair, BasePairGPU, BasePair3SPN2Type, 4> {
+class FixBasePair3SPN2 : public FixPotentialMultiAtom<BasePairVariant, BasePair3SPN2, BasePair, BasePairGPU, BasePair3SPN2Type, 4> {
 
 private:
-    BasePairEvaluator evaluator;
+    BasePairEvaluator3SPN2 evaluator;
 public:
     //DataSet *eng;
     //DataSet *press;
 
-    FixBasePair(boost::shared_ptr<State> state_, std::string handle);
+    FixBasePair3SPN2(boost::shared_ptr<State> state_, std::string handle);
 
     void compute(bool);
     void singlePointEng(float *);

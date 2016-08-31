@@ -4,8 +4,6 @@
 
 #include "globalDefs.h"
 #include "cutils_math.h"
-#include "Virial.h"
-#include "SharedMem.h"
 
 inline __device__ float morsAttrEnrgy(const float drsi, const float alfa, const float epsi, const float sigma) {
     float dist = 1.0f / drsi;
