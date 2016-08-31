@@ -1,16 +1,16 @@
 #pragma once
-#ifndef EVALUATOR_BASE_PAIR
-#define EVALUATOR_BASE_PAIR
+#ifndef EVALUATOR_BASE_PAIR_3SPN2
+#define EVALUATOR_BASE_PAIR_3SPN2
 
 #include "cutils_math.h"
 #include "cutils_3spn2.h"
 #include "BasePair.h"
-class BasePairEvaluator{
+class BasePairEvaluator3SPN2{
 public:
 
     //evaluator.force(theta, basepairType, s, distSqrs, directors, invDotProd);
-    inline __device__ float3 force(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], int myIdxInBasePair) {
-        float3 myForce;
+    inline __device__ float3 force(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], int MyIdxInBasePair) {
+        float3 myForce = {0,0,0};
         float dPhi = phi - basepairType.phi0;
         float dTheta1 = thetas[0] - basepairType.theta1;
         float dTheta2 = thetas[1] - basepairType.theta2;
@@ -25,12 +25,12 @@ public:
             energyMors = morsRepEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
             forceMors = morsRepForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
 
-            if (myIdxInBasePair == 1) {
+            if (MyIdxInBasePair == 1) {
                 myForce.x -= forceMors * directors[1].x;
                 myForce.y -= forceMors * directors[1].y;
                 myForce.z -= forceMors * directors[1].z;
             }
-            else if (myIdxInBasePair == 3) { 
+            else if (MyIdxInBasePair == 3) { 
                 myForce.x += forceMors * directors[1].x;
                 myForce.y += forceMors * directors[1].y;
                 myForce.z += forceMors * directors[1].z;
@@ -43,13 +43,13 @@ public:
                 energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
                 forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
 
-                if (myIdxInBasePair == 0) {
+                if (MyIdxInBasePair == 0) {
                     float derivofPoten = -ftor * invLens[0] * scValues[0] * energyMors;
                     myForce.x += derivofPoten * cVector.x;
                     myForce.y += derivofPoten * cVector.y;
                     myForce.z += derivofPoten * cVector.z;
                 }
-                else if (myIdxinBasePair == 1) {
+                else if (MyIdxInBasePair == 1) {
                     //I may want to store the lengths instead of continuously calculating them
                     float frb1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * energyMors;
                     float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * energyMors;
@@ -57,14 +57,14 @@ public:
                     myForce.y += (frb1 * cVector.y + frb2 * dVector.y) - forceMors * phiFactor;
                     myForce.z += (frb1 * cVector.z + frb2 * dVector.z) - forceMors * phiFactor;
                 }
-                else if (myIdxInBasePair == 2) {
+                else if (MyIdxInBasePair == 2) {
                     float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[0] * energyMors;
                     float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * energyMors;
                     myForce.x += (frc1 * dVector.x + frc2 * cVector.x) - forceMors * phiFactor;
                     myForce.y += (frc1 * dVector.y + frc2 * cVector.y) - forceMors * phiFactor;
                     myForce.z += (frc1 * dVector.z + frc2 * cVector.z) - forceMors * phiFactor;
                 }
-                else if (myIdxInBasePair == 3) {
+                else if (MyIdxInBasePair == 3) {
                     float derivofPoten = -ftor * invLens[2] * scValues[1] * energyMors;
                     myForce.x += derivofPoten * dVector.x;
                     myForce.y += derivofPoten * dVector.y;
@@ -81,7 +81,7 @@ public:
 
                 float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - thetas[1] * thetas[1]);
 
-                if (myIdxInBasePair == 1) {
+                if (MyIdxInBasePair == 1) {
                     float3 fr1;
                     fr1.x = prefactor2 * (invLens[1] * (thetas[1] * directors[1].x * invLens[1] - directors[2].x * invLens[2])) * energyMors - hbon_cosine * directors[2].x * forceMors;
                     fr1.y = prefactor2 * (invLens[1] * (thetas[1] * directors[1].y * invLens[1] - directors[2].y * invLens[2])) * energyMors - hbon_cosine * directors[2].y * forceMors;
@@ -90,7 +90,7 @@ public:
                     myForce.y += fr1.y * phiFactor;
                     myForce.z += fr1.z * phiFactor;
                 }
-                else if (myIdxInBasePair == 2) {
+                else if (MyIdxInBasePair == 2) {
                     float3 fr2;
                     fr2.x = prefactor2 * (invLens[2] * (directors[1].x * invLens[1] - thetas[1] * directors[2].x * invLens[2]) + invLens[1] * (directors[2].x * invLens[2] - thetas[1] * directors[1].x * invLens[1])) * energyMors + hbon_cosine * directors[1].x * forceMors;
                     fr2.y = prefactor2 * (invLens[2] * (directors[1].y * invLens[1] - thetas[1] * directors[2].y * invLens[2]) + invLens[1] * (directors[2].y * invLens[2] - thetas[1] * directors[1].y * invLens[1])) * energyMors + hbon_cosine * directors[1].y * forceMors;
@@ -99,7 +99,7 @@ public:
                     myForce.y += fr2.y * phiFactor;
                     myForce.z += fr2.z * phiFactor;
                 }
-                else if (myIdxInBasePair == 3) {
+                else if (MyIdxInBasePair == 3) {
                     float3 fr3;
                     fr3.x = prefactor2 * (invLens[2] * (directors[2].x * invLens[2] * thetas[1] - directors[1].x * invLens[1])) * energyMors;
                     fr3.y = prefactor2 * (invLens[2] * (directors[2].y * invLens[2] * thetas[1] - directors[1].y * invLens[1])) * energyMors;
@@ -110,13 +110,13 @@ public:
                 }
 
                 //This is mostly copied from Dan Hinckley
-                if (myIdxInBasePair == 0) {
+                if (MyIdxInBasePair == 0) {
                     float derivofPoten = -ftor * invLens[0] * scValues[0] * energyMors;
                     myForce.x += derivofPoten * cVector.x;
                     myForce.y += derivofPoten * cVector.y;
                     myForce.z += derivofPoten * cVector.z;
                 }
-                else if (myIdxinBasePair == 1) {
+                else if (MyIdxInBasePair == 1) {
                     //I may want to store the lengths instead of continuously calculating them
                     float frb1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * energyMors;
                     float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * energyMors;
@@ -124,14 +124,14 @@ public:
                     myForce.y += (frb1 * cVector.y + frb2 * dVector.y) - forceMors * phiFactor;
                     myForce.z += (frb1 * cVector.z + frb2 * dVector.z) - forceMors * phiFactor;
                 }
-                else if (myIdxInBasePair == 2) {
+                else if (MyIdxInBasePair == 2) {
                     float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[0] * energyMors;
                     float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * energyMors;
                     myForce.x += (frc1 * dVector.x + frc2 * cVector.x) - forceMors * phiFactor;
                     myForce.y += (frc1 * dVector.y + frc2 * cVector.y) - forceMors * phiFactor;
                     myForce.z += (frc1 * dVector.z + frc2 * cVector.z) - forceMors * phiFactor;
                 }
-                else if (myIdxInBasePair == 3) {
+                else if (MyIdxInBasePair == 3) {
                     float derivofPoten = -ftor * invLens[2] * scValues[1] * energyMors;
                     myForce.x += derivofPoten * dVector.x;
                     myForce.y += derivofPoten * dVector.y;
@@ -150,7 +150,7 @@ public:
 
                     float prefactor = 2.0f * basepairType.k * cosine * sine * 1.0f/ sqrtf(1.0f - thetas[0] * thetas[0]);
 
-                    if (myIdxInBasePair == 0) {
+                    if (MyIdxInBasePair == 0) {
                         float3 fr1;
                         fr1.x = prefactor * (invLens[0] * (thetas[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors;
                         fr1.y = prefactor * (invLens[0] * (thetas[0] * directors[0].y * invLens[0] + directors[1].y * invLens[1])) * energyMors;
@@ -159,7 +159,7 @@ public:
                         myForce.y += fr1.y * phiFactor;
                         myForce.z += fr1.z * phiFactor;
                     }
-                    else if (myIdxInBasePair == 1) {
+                    else if (MyIdxInBasePair == 1) {
                         float3 fr2;
                         fr2.x = prefactor * (invLens[0] * (-directors[1].x * invLens[1] - thetas[0] * directors[0].x * invLens[0])+ invLens[1] * (directors[0].x * invLens[0] + thetas[0] * directors[1].x * invLens[1])) * energyMors - hbon_cosine * directors[1].x * forceMors;
                         fr2.y = prefactor * (invLens[0] * (-directors[1].y * invLens[1] - thetas[0] * directors[0].y * invLens[0]) + invLens[1] * (directors[0].y * invLens[0] + thetas[0] * directors[1].y * invLens[1])) * energyMors - hbon_cosine * directors[1].y * forceMors;
@@ -168,7 +168,7 @@ public:
                         myForce.y += fr2.y * phiFactor;
                         myForce.z += fr2.z * phiFactor;
                     }
-                    else if (myIdxInBasePair == 3) {
+                    else if (MyIdxInBasePair == 3) {
                         float3 fr3;
                         fr3.x = prefactor * (invLens[1] * (-directors[1].x * invLens[1] * thetas[0] - directors[0].x * invLens[0])) * energyMors + hbon_cosine * directors[1].x * forceMors;
                         fr3.y = prefactor * (invLens[1] * (-directors[1].y * invLens[1] * thetas[0] - directors[0].y * invLens[0])) * energyMors + hbon_cosine * directors[1].y * forceMors;
@@ -181,13 +181,13 @@ public:
                     float first_term = energyMors * hbon_cosine;
 
                     //This is mostly copied from Dan Hinckley
-                    if (myIdxInBasePair == 0) {
+                    if (MyIdxInBasePair == 0) {
                         float derivofPoten = -ftor * invLens[0] * scValues[0] * first_term;
                         myForce.x += derivofPoten * cVector.x;
                         myForce.y += derivofPoten * cVector.y;
                         myForce.z += derivofPoten * cVector.z;
                     }
-                    else if (myIdxinBasePair == 1) {
+                    else if (MyIdxInBasePair == 1) {
                         //I may want to store the lengths instead of continuously calculating them
                         float frb1 = ftor * (length(directors[1]) - length(directors[0])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * first_term;
                         float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * first_term;
@@ -195,14 +195,14 @@ public:
                         myForce.y += (frb1 * cVector.y + frb2 * dVector.y) - forceMors * phiFactor;
                         myForce.z += (frb1 * cVector.z + frb2 * dVector.z) - forceMors * phiFactor;
                     }
-                    else if (myIdxInBasePair == 2) {
+                    else if (MyIdxInBasePair == 2) {
                         float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[1] * first_term;
                         float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * first_term;
                         myForce.x += (frc1 * dVector.x + frc2 * cVector.x) - forceMors * phiFactor;
                         myForce.y += (frc1 * dVector.y + frc2 * cVector.y) - forceMors * phiFactor;
                         myForce.z += (frc1 * dVector.z + frc2 * cVector.z) - forceMors * phiFactor;
                     }
-                    else if (myIdxInBasePair == 3) {
+                    else if (MyIdxInBasePair == 3) {
                         float derivofPoten = -ftor * invLens[2] * scValues[1] * first_term;
                         myForce.x += derivofPoten * dVector.x;
                         myForce.y += derivofPoten * dVector.y;
@@ -220,7 +220,7 @@ public:
                     float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f / sqrtf(1.0f - thetas[1] * thetas[1]);
                     float prefactor  = 2.0f * basepairType.k * cosine  * sine  * 1.0f / sqrtf(1.0f - thetas[0] * thetas[0]);
 
-                    if (myIdxInBasePair == 0) {
+                    if (MyIdxInBasePair == 0) {
                         float3 fr1;
                         fr1.x = prefactor * (invLens[0] * (thetas[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors * hbon_cosine2;
                         fr1.y = prefactor * (invLens[0] * (thetas[0] * directors[0].y * invLens[0] + directors[1].y * invLens[1])) * energyMors * hbon_cosine2;
@@ -229,7 +229,7 @@ public:
                         myForce.y += fr1.y * phiFactor;
                         myForce.z += fr1.z * phiFactor;
                     }
-                    else if (myIdxInBasePair == 1) {
+                    else if (MyIdxInBasePair == 1) {
                         float3 fr2;
                         fr2.x = prefactor * (invLens[0] * (-directors[1].x * invLens[1] - thetas[0] * directors[0].x * invLens[0]) + invLens[1] * (directors[0].x * invLens[0] - thetas[0] * directors[1].x * invLens[1])) * energyMors + prefactor2 * (invLens[1] * (thetas[1] * directors[1].x * invLens[1] - directors[2].x * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1].x * forceMors; 
                         fr2.y = prefactor * (invLens[0] * (-directors[1].y * invLens[1] - thetas[0] * directors[0].y * invLens[0]) + invLens[1] * (directors[0].y * invLens[0] - thetas[0] * directors[1].y * invLens[1])) * energyMors + prefactor2 * (invLens[1] * (thetas[1] * directors[1].y * invLens[1] - directors[2].y * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1].y * forceMors; 
@@ -238,7 +238,7 @@ public:
                         myForce.y += fr2.y * phiFactor;
                         myForce.z += fr2.z * phiFactor;
                     }
-                    else if (myIdxInBasePair == 2) {
+                    else if (MyIdxInBasePair == 2) {
                         float3 fr3;
                         fr3.x = prefactor2 * (invLens[2] * (directors[2].x * invLens[2] * thetas[1] - directors[1].x * invLens[1])) * energyMors * hbon_cosine;
                         fr3.y = prefactor2 * (invLens[2] * (directors[2].y * invLens[2] * thetas[1] - directors[1].y * invLens[1])) * energyMors * hbon_cosine;
@@ -247,7 +247,7 @@ public:
                         myForce.y += fr3.y * phiFactor;
                         myForce.z += fr3.z * phiFactor;
                     }
-                    else if (myIdxInBasePair == 3) {
+                    else if (MyIdxInBasePair == 3) {
                         float3 fr4;
                         fr4.x = prefactor2 * (invLens[2] * (directors[1].x * invLens[1] - thetas[1] * directors[2].x * invLens[2]) + invLens[1] * (directors[2].x * invLens[2] - thetas[1] * directors[1].x * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (- thetas[0] * directors[1].x * invLens[1] - directors[0].x * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1].x * forceMors; 
                         fr4.y = prefactor2 * (invLens[2] * (directors[1].y * invLens[1] - thetas[1] * directors[2].y * invLens[2]) + invLens[1] * (directors[2].y * invLens[2] - thetas[1] * directors[1].y * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (- thetas[0] * directors[1].y * invLens[1] - directors[0].y * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1].y * forceMors; 
@@ -259,13 +259,13 @@ public:
 
                     float first_term = energyMors * hbon_cosine * hbon_cosine2;
                     //This is mostly copied from Dan Hinckley
-                    if (myIdxInBasePair == 0) {
+                    if (MyIdxInBasePair == 0) {
                         float derivofPoten = -ftor * invLens[0] * scValues[0] * first_term;
                         myForce.x += derivofPoten * cVector.x;
                         myForce.y += derivofPoten * cVector.y;
                         myForce.z += derivofPoten * cVector.z;
                     }
-                    else if (myIdxinBasePair == 1) {
+                    else if (MyIdxInBasePair == 1) {
                         //I may want to store the lengths instead of continuously calculating them
                         float frb1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * first_term;
                         float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * first_term;
@@ -273,14 +273,14 @@ public:
                         myForce.y += (frb1 * cVector.y + frb2 * dVector.y) - forceMors * phiFactor;
                         myForce.z += (frb1 * cVector.z + frb2 * dVector.z) - forceMors * phiFactor;
                     }
-                    else if (myIdxInBasePair == 2) {
+                    else if (MyIdxInBasePair == 2) {
                         float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[0] * first_term;
                         float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * first_term;
                         myForce.x += (frc1 * dVector.x + frc2 * cVector.x) - forceMors * phiFactor;
                         myForce.y += (frc1 * dVector.y + frc2 * cVector.y) - forceMors * phiFactor;
                         myForce.z += (frc1 * dVector.z + frc2 * cVector.z) - forceMors * phiFactor;
                     }
-                    else if (myIdxInBasePair == 3) {
+                    else if (MyIdxInBasePair == 3) {
                         float derivofPoten = -ftor * invLens[2] * scValues[1] * first_term;
                         myForce.x += derivofPoten * dVector.x;
                         myForce.y += derivofPoten * dVector.y;
@@ -297,7 +297,7 @@ public:
     }
 
 
-    inline __device__ float3 forcesAll(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], float3 forces[4]) {
+    inline __device__ void forcesAll(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], float3 forces[4]) {
         float dPhi = phi - basepairType.phi0;
         float dTheta1 = thetas[0] - basepairType.theta1;
         float dTheta2 = thetas[1] - basepairType.theta2;
@@ -600,7 +600,7 @@ public:
             }
         }
         return eBasePair;
-
+    }
 };
 
 #endif

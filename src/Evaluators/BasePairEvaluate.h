@@ -94,9 +94,9 @@ __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, i
                 invMagProds[0] = invLens[0] * invLens[1];
                 c12Mags[0] = dotProd * invMagProds[0]; //3spn2 indexing 
                 for (int i=1; i<3; i++) { // 3spn2 indexing
-                    float dotProd = dot(directors[3], directors[i]);
+                    float dotProd = dot(directors[2], directors[i]);
               //      printf("ctmp is %f\n", dotProd);
-                    invMagProds[i] = invLens[3] * invLens[i];
+                    invMagProds[i] = invLens[2] * invLens[i];
                     c12Mags[i] = dotProd * invMagProds[i]; //lammps variable names are opaque
               //      printf("c12 mag %d %f\n", i, c12Mags[i]);
                 }
@@ -141,8 +141,9 @@ __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, i
                 eVector.x = cVector.z*dVector.y - cVector.y*dVector.z;
                 eVector.y = cVector.x*dVector.z - cVector.z*dVector.x;
                 eVector.z = cVector.y*dVector.x - cVector.x*dVector.y;
+                float eVectorLen = length(eVector);
                 float dx = dot(eVector, directors[1]) * invLens[1] / eVectorLen;
-                c = dot(cVector,dVector) / cVectorLen / dVectorLen;
+                float c = dot(cVector,dVector) / cVectorLen / dVectorLen;
 
             //    printf("c is %f\n", c);
                 if (c > 1.0f) {
@@ -159,14 +160,14 @@ __global__ void compute_force_basepair(int nAtoms, float4 *xs, float4 *forces, i
                 //printf("no force\n");
                 if (COMPUTEVIRIALS) {
                     float3 allForces[4];
-                    evaluator.forcesAll(basepairType, phi, thetas, cVector, dVector, scValues, invLens, invLenSqrs, c12Mags, c0, c, invMagProds, c12Mags, invLens, directors, allForces);
+                    evaluator.forcesAll(basepairType, phi, thetas, cVector, dVector, scValues, invMagProds, invLens, invLenSqrs, c12Mags, c, directors, allForces);
                     computeVirial(sumVirials, allForces[0], directors[0]);
                     computeVirial(sumVirials, allForces[2], directors[1]);
                     computeVirial(sumVirials, allForces[3], directors[1] + directors[2]);
                     forceSum += allForces[myIdxInBasePair];
                     
                 } else {
-                    float3 myForce = evaluator.force(basepairType, phi, thetas, cVector, dVector, scValues, invLens, invLenSqrs, c12Mags, c, invMagProds, invLens, directors, myIdxInBasePair);
+                    float3 myForce = evaluator.force(basepairType, phi, thetas, cVector, dVector, scValues, invMagProds, invLens, invLenSqrs, c12Mags, c, directors, myIdxInBasePair);
                     forceSum += myForce;
                 }
                 
@@ -276,9 +277,9 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
                 invMagProds[0] = invLens[0] * invLens[1];
                 c12Mags[0] = dotProd * invMagProds[0]; //3spn2 indexing 
                 for (int i=1; i<3; i++) { // 3spn2 indexing
-                    float dotProd = dot(directors[3], directors[i]);
+                    float dotProd = dot(directors[2], directors[i]);
               //      printf("ctmp is %f\n", dotProd);
-                    invMagProds[i] = invLens[3] * invLens[i];
+                    invMagProds[i] = invLens[2] * invLens[i];
                     c12Mags[i] = dotProd * invMagProds[i]; //lammps variable names are opaque
               //      printf("c12 mag %d %f\n", i, c12Mags[i]);
                 }
@@ -323,8 +324,9 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
                 eVector.x = cVector.z*dVector.y - cVector.y*dVector.z;
                 eVector.y = cVector.x*dVector.z - cVector.z*dVector.x;
                 eVector.z = cVector.y*dVector.x - cVector.x*dVector.y;
+                float eVectorLen = length(eVector);
                 float dx = dot(eVector, directors[1]) * invLens[1] / eVectorLen;
-                c = dot(cVector,dVector) / cVectorLen / dVectorLen;
+                float c = dot(cVector,dVector) / cVectorLen / dVectorLen;
 
             //    printf("c is %f\n", c);
                 if (c > 1.0f) {
@@ -338,7 +340,7 @@ __global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perPartic
                     phi = -phi;
                 }
             
-                energySum += evaluator.energy(basepairType, phi, thetas, invLens,  invLenSqrs, directors, myIdxInBasePair);
+                energySum += evaluator.energy(basepairType, phi, thetas, invLens, invLenSqrs, directors);
 
                 
 
