@@ -1,7 +1,23 @@
 #include "Dihedral.h"
+#include <boost/python.hpp>
 #include "boost_for_export.h"
 #include "array_indexing_suite.hpp"
 namespace py = boost::python;
+
+void Dihedral::takeIds(Dihedral *other) {
+    for (int i=0; i<4; i++) {
+        ids[i] = other->ids[i];
+    }
+}
+
+
+void DihedralGPU::takeIds(Dihedral *other) {
+    for (int i=0; i<4; i++) {
+        ids[i] = other->ids[i];
+    }
+}
+
+
 DihedralOPLS::DihedralOPLS(Atom *a, Atom *b, Atom *c, Atom *d, double coefs_[4], int type_) {
     ids[0] = a->id;
     ids[1] = b->id;
@@ -44,19 +60,6 @@ DihedralGauss::DihedralGauss(double phi0_, double sigma_, double k0_, int type_)
     sigma = sigma_;
     k0 = k0_;
     type = type_;
-}
-
-void Dihedral::takeIds(Dihedral *other) {
-    for (int i=0; i<4; i++) {
-        ids[i] = other->ids[i];
-    }
-}
-
-
-void DihedralGPU::takeIds(Dihedral *other) {
-    for (int i=0; i<4; i++) {
-        ids[i] = other->ids[i];
-    }
 }
 
 DihedralOPLSType::DihedralOPLSType(DihedralOPLS *dihedral) {
@@ -117,21 +120,24 @@ bool DihedralGaussType::operator==(const DihedralGaussType &other) const {
     return true;
 }
 
-void export_Dihedrals() {
-    py::class_<DihedralOPLS, SHARED(DihedralOPLS)> ( "SimDihedralOPLS", py::init<>())
+void export_DihedralOPLS() {
+    py::class_<DihedralOPLS, SHARED(DihedralOPLS)> ( "DihedralOPLS", py::init<>())
         .def_readwrite("type", &DihedralOPLS::type)
         .def_readonly("coefs", &DihedralOPLS::coefs)
         .def_readonly("ids", &DihedralOPLS::ids)
 
     ;
 
-    py::class_<DihedralGauss, SHARED(DihedralGauss)> ( "SimDihedralGauss", py::init<>())
+}
+
+void export_DihedralGauss() {
+    py::class_<DihedralGauss, SHARED(DihedralGauss)> ( "DihedralGauss", py::init<>())
         .def_readwrite("type", &DihedralGauss::type)
-        .def_readonly("phi0", &DihedralGauss::phi0)
-        .def_readonly("sigma", &DihedralGauss::sigma)
-        .def_readonly("k0", &DihedralGauss::k0)
+        .def_readwrite("phi0", &DihedralGauss::phi0)
+        .def_readwrite("sigma", &DihedralGauss::sigma)
+        .def_readwrite("k0", &DihedralGauss::k0)
         .def_readonly("ids", &DihedralGauss::ids)
 
     ;
-
 }
+

@@ -10,13 +10,23 @@
 #include <array>
 class DihedralOPLS;
 class DihedralGauss;
-void export_Dihedrals();
+void export_DihedralOPLS();
+void export_DihedralGauss();
 class Dihedral{
     public:
         //going to try storing by id instead.  Makes preparing for a run less intensive
         std::array<int, 4> ids;
         int type;
         void takeIds(Dihedral *);
+};
+
+class DihedralGPU {
+    public:
+        int ids[4];
+        uint32_t type;
+        void takeIds(Dihedral *);
+
+
 };
 
 class DihedralOPLSType {
@@ -36,15 +46,6 @@ class DihedralOPLS : public Dihedral, public DihedralOPLSType {
         DihedralOPLS(double coefs_[4], int type_);
         DihedralOPLS(){};
 	std::string getInfoString();
-};
-
-class DihedralGPU {
-    public:
-        int ids[4];
-        uint32_t type;
-        void takeIds(Dihedral *);
-
-
 };
 
 //for forcer maps
@@ -97,8 +98,8 @@ namespace std {
 }
 
 typedef boost::variant<
-	DihedralOPLS,
     DihedralGauss,
+	DihedralOPLS,
     Dihedral	
 > DihedralVariant;
 #endif

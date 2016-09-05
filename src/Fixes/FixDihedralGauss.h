@@ -1,8 +1,6 @@
 #pragma once
-#ifndef FIXDIHEDRALGAUSS_H
-#define FIXDIHEDRALGAUSS_H
-
-#include <boost/python.hpp>
+#ifndef FIXDIHEDRAL_GAUSS_H
+#define FIXDIHEDRAL_GAUSS_H
 
 #include "FixPotentialMultiAtom.h"
 #include "Dihedral.h"
@@ -23,7 +21,7 @@ public:
     void compute(bool);
     void singlePointEng(float *);
 
-    void createDihedral(Atom *, Atom *, Atom *, Atom *, double, double, double, int);
+    void createDihedral(Atom *, Atom *, Atom *, Atom *, double, double, double, int type_);
     void setDihedralTypeCoefs(int, double, double, double);
 
     //std::vector<pair<int, std::vector<int> > > neighborlistExclusions();
