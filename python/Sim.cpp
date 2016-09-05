@@ -30,6 +30,7 @@ using namespace std;
 #include "Dihedral.h"
 #include "Improper.h"
 #include "Molecule.h"
+#include "BasePair.h"
 //#include "DataTools.h"
 BOOST_PYTHON_MODULE(Sim) {
     export_stls();	
@@ -49,15 +50,21 @@ BOOST_PYTHON_MODULE(Sim) {
     export_BondHarmonic();
     export_BondFENE();
     
+    export_FixAngleBaseStacking();
     export_FixAngleHarmonic();
     export_FixAngleCosineDelta();
     export_AngleHarmonic();
     export_AngleCosineDelta();
+    export_AngleBaseStacking();
 
     export_FixImproperHarmonic();
     export_Impropers();
     export_FixDihedralOPLS();
-    export_Dihedrals();
+    export_FixDihedralGauss();
+    export_DihedralOPLS();
+    export_DihedralGauss();
+    export_FixBasePair3SPN2();
+    export_BasePairs();
     export_FixWall();
     export_FixWallHarmonic();
     export_FixWallLJ126();
