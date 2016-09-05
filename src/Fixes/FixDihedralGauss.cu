@@ -47,6 +47,7 @@ void FixDihedralGauss::singlePointEng(float *perParticleEng) {
 
 
 void FixDihedralGauss::createDihedral(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double k0, int type) {
+    vector<Atom *> atoms = {a, b, c, d};
     if (type==-1) {
             assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k0!=COEF_DEFAULT);
     }
@@ -78,8 +79,8 @@ bool FixDihedralGauss::readFromRestart(pugi::xml_node restData) {
         phi0 = atof(phi0_.c_str());
         sigma = atof(sigma_.c_str());
         k0    = atof(k0_.c_str());
-        DihedralGauss dummy(phi0, sigma, k0, type);
-        setForcerType(type, dummy);
+
+        setDihedralTypeCoefs(type, phi0, sigma, k0);
       }
     } else if (tag == "members") {
       for (auto member_node = curr_node.first_child(); member_node; member_node = member_node.next_sibling()) {
@@ -131,21 +132,20 @@ void export_FixDihedralGauss() {
         )
     )
     .def("createDihedral", &FixDihedralGauss::createDihedral,
-            (py::arg("phi0")=-1,
-             py::arg("sigma")=-1,
-             py::arg("k0")=-1,
+             (py::arg("phi0")=COEF_DEFAULT,
+             py::arg("sigma")=COEF_DEFAULT,
+             py::arg("k0")=COEF_DEFAULT,
              py::arg("type")=-1)
         )
 
     .def("setDihedralTypeCoefs", &FixDihedralGauss::setDihedralTypeCoefs, 
-            (py::arg("type"), 
-             py::arg("phi0"),
-             py::arg("sigma"),
-             py::arg("k0"),
-             py::arg("coefs"))
+            (py::arg("type")=-1, 
+             py::arg("phi0")=COEF_DEFAULT,
+             py::arg("sigma")=COEF_DEFAULT,
+             py::arg("k0")=COEF_DEFAULT
+            )
         )
     .def_readonly("dihedrals", &FixDihedralGauss::pyForcers)
-
     ;
 
 }

@@ -20,6 +20,15 @@ class Dihedral{
         void takeIds(Dihedral *);
 };
 
+class DihedralGPU {
+    public:
+        int ids[4];
+        uint32_t type;
+        void takeIds(Dihedral *);
+
+
+};
+
 class DihedralOPLSType {
     public:
         float coefs[4];
@@ -35,8 +44,6 @@ class DihedralOPLS : public Dihedral, public DihedralOPLSType {
         DihedralOPLS(){};
 	std::string getInfoString();
 };
-
-
 
 class DihedralCHARMMType {
     public:
@@ -60,14 +67,6 @@ class DihedralCHARMM: public Dihedral, public DihedralCHARMMType {
 };
 
 
-class DihedralGPU {
-    public:
-        int ids[4];
-        uint32_t type;
-        void takeIds(Dihedral *);
-
-
-};
 
 //for forcer maps
 namespace std {
@@ -126,7 +125,6 @@ namespace std {
 }
 
 typedef boost::variant<
-	DihedralOPLS,
     DihedralGauss,
 	DihedralOPLS, 
     DihedralCHARMM,
