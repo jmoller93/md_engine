@@ -46,6 +46,27 @@ DihedralGauss::DihedralGauss(double phi0_, double sigma_, double k0_, int type_)
     type = type_;
 }
 
+DihedralCHARMM::DihedralCHARMM(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, double k_, int n_, double d_,  int type_) {
+    ids[0] = atomA->id;
+    ids[1] = atomB->id;
+    ids[2] = atomC->id;
+    ids[3] = atomD->id;
+    k = k_;
+    n = n_;
+    d = d_;
+    type = type_;
+}
+
+DihedralCHARMM::DihedralCHARMM(double k_, int n_, double d_, int type_) {
+    for (int i=0; i<4; i++) {
+        ids[i] = -1;
+    }
+    k = k_;
+    n = n_;
+    d = d_;
+    type = type_;
+}
+
 void Dihedral::takeIds(Dihedral *other) {
     for (int i=0; i<4; i++) {
         ids[i] = other->ids[i];
@@ -64,6 +85,12 @@ DihedralOPLSType::DihedralOPLSType(DihedralOPLS *dihedral) {
         coefs[i] = dihedral->coefs[i];
     }
 }
+DihedralCHARMMType::DihedralCHARMMType(DihedralCHARMM *dihedral) {
+    k = dihedral->k;
+    n = dihedral->n;
+    d = dihedral->d;
+}
+
 
 DihedralGaussType::DihedralGaussType(DihedralGauss *dihedral) {
     phi0  = dihedral->phi0;
@@ -78,8 +105,16 @@ std::string DihedralOPLS::getInfoString() {
 }
 
 std::string DihedralOPLSType::getInfoString() {
+    std::stringstream ss;
+    ss << " coef_a='" << coefs[0]<< "' coef_b='" << coefs[1] << "' coef_c='" << coefs[2] << "' coef_d='" << coefs[3];
+    return ss.str();
+}
+
+
+
+std::string DihedralCHARMM::getInfoString() {
   std::stringstream ss;
-  ss << " coef_a='" << coefs[0]<< "' coef_b='" << coefs[1] << "' coef_c='" << coefs[2] << "' coef_d='" << coefs[3];
+  ss << "<member type='" << type << "' atomID_a='" << ids[0] << "' atomID_b='" << ids[1] << "' atomID_c='" << ids[2] << "' atomID_d='" << ids[3] << " k='" << k << "' n='" << n << "' d='" << d << "'/>\n";
   return ss.str();
 }
 
@@ -95,6 +130,11 @@ std::string DihedralGaussType::getInfoString() {
   return ss.str();
 }
 
+std::string DihedralCHARMMType::getInfoString() {
+  std::stringstream ss;
+  ss << " k='" << k << "' n='" << n << "' d='" << d;
+  return ss.str();
+}
 bool DihedralOPLSType::operator==(const DihedralOPLSType &other) const {
     for (int i=0; i<4; i++) {
         if (coefs[i] != other.coefs[i]) {
@@ -117,11 +157,25 @@ bool DihedralGaussType::operator==(const DihedralGaussType &other) const {
     return true;
 }
 
+bool DihedralCHARMMType::operator==(const DihedralCHARMMType &other) const {
+    return other.k == k and other.d == d and other.n == n;
+}
+
+
+
 void export_Dihedrals() {
     py::class_<DihedralOPLS, SHARED(DihedralOPLS)> ( "SimDihedralOPLS", py::init<>())
         .def_readwrite("type", &DihedralOPLS::type)
         .def_readonly("coefs", &DihedralOPLS::coefs)
         .def_readonly("ids", &DihedralOPLS::ids)
+
+    ;
+    py::class_<DihedralCHARMM, SHARED(DihedralCHARMM)> ( "SimDihedralCHARMM", py::init<>())
+        .def_readwrite("type", &DihedralCHARMM::type)
+        .def_readwrite("k", &DihedralCHARMM::k)
+        .def_readwrite("n", &DihedralCHARMM::n)
+        .def_readwrite("d", &DihedralCHARMM::d)
+        .def_readonly("ids", &DihedralCHARMM::ids)
 
     ;
 

@@ -1,30 +1,20 @@
 #pragma once
-#ifndef EVALUATOR_DIHEDRAL_OPLS
-#define EVALUATOR_DIHEDRAL_OPLS
+#ifndef EVALUATOR_DIHEDRAL_CHARMM
+#define EVALUATOR_DIHEDRAL_CHARMM
 
 #include "cutils_math.h"
 #include "Dihedral.h"
-class DihedralEvaluatorOPLS {
+class DihedralEvaluatorCHARMM {
     public:
         //dihedralType, phi, c, scValues, invLenSqrs, c12Mags, c0,
 
                 //float3 myForce = evaluator.force(dihedralType, phi, c, scValues, invLenSqrs, c12Mags, c0, c, invMagProds, c12Mags, invLens, directors, myIdxInDihedral);
-        inline __device__ float3 force(DihedralOPLSType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], int myIdxInDihedral) {
+        inline __device__ float3 force(DihedralCHARMMType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], int myIdxInDihedral) {
             float3 myForce;
-            float sinPhi = sinf(phi);
-            float absSinPhi = sinPhi < 0 ? -sinPhi : sinPhi;
-            if (absSinPhi < EPSILON) {
-                sinPhi = EPSILON;
-            }
-            float invSinPhi = 1.0f / sinPhi;
     //LAMMPS pre-multiplies all of its coefs by 0.5.  We're doing it in the kernel.
-            float derivOfPotential = 0.5 * (
-                    dihedralType.coefs[0] 
-                    - 2.0f * dihedralType.coefs[1] * sinf(2.0f*phi) * invSinPhi
-                    + 3.0f * dihedralType.coefs[2] * sinf(3.0f*phi) * invSinPhi
-                    - 4.0f * dihedralType.coefs[3] * sinf(4.0f*phi) * invSinPhi
-                    )
-                ;
+            //printf("k %f n %d d %f\n", dihedralType.k, dihedralType.n, dihedralType.d);
+            float derivOfPotential = dihedralType.k * dihedralType.n * sinf(dihedralType.d - dihedralType.n*phi);
+            //printf("deriv %f\n", derivOfPotential);
 
             c *= derivOfPotential;
             scValues[2] *= derivOfPotential;
@@ -65,25 +55,14 @@ class DihedralEvaluatorOPLS {
                     myForce = sFloat3 - myForce;
                 }
             }
+           // printf("%f %f %f\n", myForce.x, myForce.y, myForce.z);
             return myForce;
 
 
         }
-        inline __device__ void forcesAll(DihedralOPLSType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], float3 forces[4]) {
-            float sinPhi = sinf(phi);
-            float absSinPhi = sinPhi < 0 ? -sinPhi : sinPhi;
-            if (absSinPhi < EPSILON) {
-                sinPhi = EPSILON;
-            }
-            float invSinPhi = 1.0f / sinPhi;
-            //LAMMPS pre-multiplies all of its coefs by 0.5.  We're doing it in the kernel.
-            float derivOfPotential = 0.5 * (
-                                            dihedralType.coefs[0] 
-                                            - 2.0f * dihedralType.coefs[1] * sinf(2.0f*phi) * invSinPhi
-                                            + 3.0f * dihedralType.coefs[2] * sinf(3.0f*phi) * invSinPhi
-                                            - 4.0f * dihedralType.coefs[3] * sinf(4.0f*phi) * invSinPhi
-                                           )
-                ;
+        inline __device__ void forcesAll(DihedralCHARMMType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], float3 forces[4]) {
+            float derivOfPotential = dihedralType.k * dihedralType.n * sinf(dihedralType.d - dihedralType.n*phi);
+
 
             c *= derivOfPotential;
             scValues[2] *= derivOfPotential;
@@ -122,14 +101,8 @@ class DihedralEvaluatorOPLS {
         }
 
                 //energySum += evaluator.energy(dihedralType, phi, scValues, invLenSqrs, c12Mags, c0, c, invMagProds, c12Mags, invLens, directors, myIdxInDihedral);
-        inline __device__ float energy(DihedralOPLSType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], int myIdxInDihedral) {
-            float eng = 0.5 * (
-                               dihedralType.coefs[0] * (1 + c)
-                               + dihedralType.coefs[1] * (1.0f - cosf(2.0f*phi))
-                               + dihedralType.coefs[2] * (1.0f + cosf(3.0f*phi)) 
-                               + dihedralType.coefs[3] * (1.0f - cosf(4.0f*phi)) 
-                              )
-                ;
+        inline __device__ float energy(DihedralCHARMMType dihedralType, float phi, float scValues[3], float invLenSqrs[3], float c12Mangs[3], float c0, float c, float invMagProds[2], float c12Mags[2], float invLens[3], float3 directors[3], int myIdxInDihedral) {
+            float eng = dihedralType.k * (1 + cosf(dihedralType.n*phi - dihedralType.d));
             return (float) (0.25f * eng);
 
         }

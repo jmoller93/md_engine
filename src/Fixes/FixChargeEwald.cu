@@ -139,6 +139,7 @@ __global__ void Green_function_cu(BoundsGPU bounds, int3 sz,float *Green_functio
           float sum1=0.0f;   
           float sum2=0.0f;   
           float k2=lengthSqr(k);
+          float Fouralpha2inv=0.25/alpha/alpha;
           if (k2!=0.0){
               for (int ix=-sum_limits;ix<=sum_limits;ix++){//TODO different limits 
                 for (int iy=-sum_limits;iy<=sum_limits;iy++){
@@ -149,13 +150,13 @@ __global__ void Green_function_cu(BoundsGPU bounds, int3 sz,float *Green_functio
 //                             kpM.z+=6.28318530717958647693f/h.z*iz;
                             float kpMlen=lengthSqr(kpM);
                             float W=sinc(kpM.x*h.x*0.5)*sinc(kpM.y*h.y*0.5)*sinc(kpM.z*h.z*0.5);
-                            for(int p=1;p<intrpl_order;p++)
-                                  W*=W;
+//                             for(int p=1;p<intrpl_order;p++)
+//                                   W*=W;
     //                          W*=h;//not need- cancels out
-                            float W2=W*W;
-                            
+//                             float W2=W*W;
+                             float W2=pow(W,intrpl_order*2);
                             //4*PI
-                            sum1+=12.56637061435917295385*exp(-kpMlen*0.25/alpha/alpha)*dot(k,kpM)/kpMlen*W2;
+                            sum1+=12.56637061435917295385*exp(-kpMlen*Fouralpha2inv)*dot(k,kpM)/kpMlen*W2;
                             sum2+=W2;
                   }
                 }
@@ -333,7 +334,7 @@ __global__ void virials_cu(BoundsGPU bounds,int3 sz,Virial *dest,float alpha, fl
           float differential=-2.0*(1.0/klen+0.25/(alpha*alpha));
           if (klen==0.0) {differential=0.0;E=0.0;}
           
-          Virial virialstmp = Virial();   
+          Virial virialstmp = Virial(0, 0, 0, 0, 0, 0);   
           virialstmp[0]=(1.0+differential*k.x*k.x)*E; //xx
           virialstmp[2]=(1.0+differential*k.y*k.y)*E; //yy
           virialstmp[5]=(1.0+differential*k.z*k.z)*E; //zz
@@ -386,7 +387,7 @@ __global__ void sum_virials_cu(Virial *dest, Virial *src, int n, int warpSize){
             tmpV[threadIdx.x + step] = src[copyBaseIdx + step];
             
         } else {
-            tmpV[threadIdx.x + step] =Virial();
+            tmpV[threadIdx.x + step] =Virial(0, 0, 0, 0, 0, 0);
         }
     }
     int curLookahead = N_DATA_PER_THREAD;
@@ -416,11 +417,11 @@ __global__ void sum_virials_cu(Virial *dest, Virial *src, int n, int warpSize){
 }
 
 template < bool COMPUTE_VIRIALS>
-__global__ void compute_short_range_forces_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float alpha, float rCut, BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr, float onefourStr, Virial *__restrict__ virials,Virial  virial_per_particle) {
+__global__ void compute_short_range_forces_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float alpha, float rCut, BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr, float onefourStr, Virial *__restrict__ virials, Virial *virialField, float volume) {
 
     float multipliers[4] = {1, onetwoStr, onethreeStr, onefourStr};
 
-    Virial virialsSum = Virial();   
+    Virial virialsSum = Virial(0, 0, 0, 0, 0, 0);   
     int idx = GETIDX();
     if (idx < nAtoms) {
         float4 posWhole = xs[idx];
@@ -465,7 +466,10 @@ __global__ void compute_short_range_forces_cu(int nAtoms, float4 *xs, float4 *fs
         }   
         fs[idx] += forceSum; //operator for float4 + float3
         if (COMPUTE_VIRIALS) {
-            virialsSum+=virial_per_particle;
+            //printf("vir %f %f %f %f %f %f\n", virialsSum.vals[0], virialsSum.vals[1], virialsSum.vals[2], virial_per_particle.vals[0],virial_per_particle.vals[1],virial_per_particle.vals[2]);
+            Virial field = virialField[0];
+            field /= (nAtoms * volume);
+            virialsSum+=field;
             virials[idx] += virialsSum;
         }
     }
@@ -516,7 +520,7 @@ __global__ void compute_short_range_energies_cu(int nAtoms, float4 *xs, uint16_t
     }
 
 }
-FixChargeEwald::FixChargeEwald(SHARED(State) state_, string handle_, string groupHandle_): FixCharge(state_, handle_, groupHandle_, chargeEwaldType, true),first_run(true){
+FixChargeEwald::FixChargeEwald(SHARED(State) state_, string handle_, string groupHandle_): FixCharge(state_, handle_, groupHandle_, chargeEwaldType, true){
   cufftCreate(&plan);
 }
 
@@ -543,7 +547,7 @@ const double amp_table[][7] = {
 
 
 double FixChargeEwald :: DeltaF_k(double t_alpha){
-   
+    int nAtoms = state->atoms.size(); 
    double sumx=0.0,sumy=0.0,sumz=0.0;
    for( int m=0;m<interpolation_order;m++){
        double amp=amp_table[interpolation_order-1][m];
@@ -557,25 +561,17 @@ double FixChargeEwald :: DeltaF_k(double t_alpha){
  }
  
 double  FixChargeEwald :: DeltaF_real(double t_alpha){  
+    int nAtoms = state->atoms.size(); 
    return 2*total_Q2/sqrt(nAtoms*r_cut*L.x*L.y*L.z)*exp(-t_alpha*t_alpha*r_cut*r_cut);
  } 
  
  
-
-void FixChargeEwald::find_optimal_parameters(){
-
-    nAtoms = state->atoms.size();    
+void FixChargeEwald::setTotalQ2() {
+    int nAtoms = state->atoms.size();    
     GPUArrayGlobal<float>tmp(1);
     tmp.memsetByVal(0.0);
 
 
-    /*
-    sumSqr<float,float, N_DATA_PER_THREAD> <<<NBLOCK(nAtoms/(double)N_DATA_PER_THREAD),PERBLOCK,N_DATA_PER_THREAD*sizeof(float)*PERBLOCK>>>(
-                                            tmp.getDevData(),
-                                            state->gpd.qs(state->gpd.activeIdx()),
-                                            nAtoms,
-                                            state->devManager.prop.warpSize);
-     */
     accumulate_gpu<float,float, SumSqr, N_DATA_PER_THREAD> <<<NBLOCK(nAtoms/(double)N_DATA_PER_THREAD),PERBLOCK,N_DATA_PER_THREAD*sizeof(float)*PERBLOCK>>>
         (
          tmp.getDevData(),
@@ -587,13 +583,7 @@ void FixChargeEwald::find_optimal_parameters(){
     total_Q2=tmp.h_data[0];
 
     tmp.memsetByVal(0.0);
-    /*
-       sumSingle<float,float, N_DATA_PER_THREAD> <<<NBLOCK(nAtoms/(double)N_DATA_PER_THREAD),PERBLOCK,N_DATA_PER_THREAD*sizeof(float)*PERBLOCK>>>(
-       tmp.getDevData(),
-       state->gpd.qs(state->gpd.activeIdx()),
-       nAtoms,
-       state->devManager.prop.warpSize);
-     */
+
     accumulate_gpu<float,float, SumSingle, N_DATA_PER_THREAD> <<<NBLOCK(nAtoms/(double)N_DATA_PER_THREAD),PERBLOCK,N_DATA_PER_THREAD*sizeof(float)*PERBLOCK>>>
         (
          tmp.getDevData(),
@@ -603,10 +593,14 @@ void FixChargeEwald::find_optimal_parameters(){
          SumSingle());
 
     tmp.dataToHost();   
-    total_Q=tmp.h_data[0];    
+    total_Q=tmp.h_data[0];   
+    
     cout<<"total_Q "<<total_Q<<'\n';
     cout<<"total_Q2 "<<total_Q2<<'\n';
+}
+void FixChargeEwald::find_optimal_parameters(bool printError){
 
+    int nAtoms = state->atoms.size();    
     L=state->boundsGPU.trace();
     h=make_float3(L.x/sz.x,L.y/sz.y,L.z/sz.z);
 //     cout<<"Lx "<<L.x<<'\n';
@@ -641,8 +635,10 @@ void FixChargeEwald::find_optimal_parameters(){
     }
     if (n_iter==max_iter) cout<<"Ewald RMS Root finder failed, max_iter "<<max_iter<<" reached\n";
     alpha=x_b;
-    cout<<"Ewald alpha="<<alpha<<'\n';
-    cout<<"Ewald RMS error is  "<<DeltaF_k(alpha)+DeltaF_real(alpha)<<'\n';
+    if (printError) {
+        cout<<"Ewald alpha="<<alpha<<'\n';
+        cout<<"Ewald RMS error is  "<<DeltaF_k(alpha)+DeltaF_real(alpha)<<'\n';
+    }
     
     
 }
@@ -689,8 +685,10 @@ void FixChargeEwald::calc_Green_function(){
     
     dim3 dimBlock(8,8,8);
     dim3 dimGrid((sz.x + dimBlock.x - 1) / dimBlock.x,(sz.y + dimBlock.y - 1) / dimBlock.y,(sz.z + dimBlock.z - 1) / dimBlock.z);    
+    int sum_limits=int(alpha*pow(h.x*h.y*h.z,1.0/3.0)/3.14159*(sqrt(-log(10E-7))))+1;
+    cout<<"sum_limits " <<sum_limits<<'\n';
     Green_function_cu<<<dimGrid, dimBlock>>>(state->boundsGPU, sz,Green_function.getDevData(),alpha,
-                                             10,interpolation_order);//TODO parameters unknown
+                                             sum_limits,interpolation_order);//TODO parameters unknown
     CUT_CHECK_ERROR("Green_function_cu kernel execution failed");
     
         //test area
@@ -712,8 +710,8 @@ void FixChargeEwald::calc_Green_function(){
 
 
 void FixChargeEwald::calc_potential(cufftComplex *phi_buf){
-     Bounds b=state->bounds;
-    float volume=b.rectComponents[0]*b.rectComponents[1]*b.rectComponents[2];
+     BoundsGPU b=state->boundsGPU;
+    float volume=b.volume();
     
     dim3 dimBlock(8,8,8);
     dim3 dimGrid((sz.x + dimBlock.x - 1) / dimBlock.x,(sz.y + dimBlock.y - 1) / dimBlock.y,(sz.z + dimBlock.z - 1) / dimBlock.z);    
@@ -743,10 +741,24 @@ void FixChargeEwald::calc_potential(cufftComplex *phi_buf){
 //     delete []buf;
 }
 
+bool FixChargeEwald::prepareForRun() {
+    virialField = GPUArrayDeviceGlobal<Virial>(1);
+    setTotalQ2();
+    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
+        handleChangedBounds(true);
+    }
+    return true;
+}
 
-
+void FixChargeEwald::handleChangedBounds(bool printError) {
+   // printf("DOING BOUNDS");
+    find_optimal_parameters(printError);
+    calc_Green_function();
+    boundsLastOptimize = state->boundsGPU;
+    total_Q2LastOptimize=total_Q2;
+}
 void FixChargeEwald::compute(bool computeVirials) {
-    CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
+ //   CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
 //     cout<<"FixChargeEwald::compute..\n";
     int nAtoms = state->atoms.size();
@@ -754,11 +766,8 @@ void FixChargeEwald::compute(bool computeVirials) {
     GridGPU &grid = state->gridGPU;
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
-    
-    if (first_run){
-        first_run=false;
-        find_optimal_parameters();
-        calc_Green_function();
+    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
+        handleChangedBounds(false);
     }
     
  
@@ -768,7 +777,7 @@ void FixChargeEwald::compute(bool computeVirials) {
     dim3 dimBlock(8,8,8);
     dim3 dimGrid((sz.x + dimBlock.x - 1) / dimBlock.x,(sz.y + dimBlock.y - 1) / dimBlock.y,(sz.z + dimBlock.z - 1) / dimBlock.z);    
     map_charge_set_to_zero_cu<<<dimGrid, dimBlock>>>(sz,FFT_Qs);
-    CUT_CHECK_ERROR("map_charge_set_to_zero_cu kernel execution failed");
+  //  CUT_CHECK_ERROR("map_charge_set_to_zero_cu kernel execution failed");
 
       switch (interpolation_order){
       case 1:{map_charge_to_grid_order_1_cu
@@ -788,11 +797,11 @@ void FixChargeEwald::compute(bool computeVirials) {
                                               (float *)FFT_Qs);
               break;}
     }    
-    CUT_CHECK_ERROR("map_charge_to_grid_cu kernel execution failed");
+   // CUT_CHECK_ERROR("map_charge_to_grid_cu kernel execution failed");
 
     cufftExecC2C(plan, FFT_Qs, FFT_Qs, CUFFT_FORWARD);
-    cudaDeviceSynchronize();
-    CUT_CHECK_ERROR("cufftExecC2C Qs execution failed");
+   // cudaDeviceSynchronize();
+  //  CUT_CHECK_ERROR("cufftExecC2C Qs execution failed");
 
     
 //     //test area
@@ -809,7 +818,6 @@ void FixChargeEwald::compute(bool computeVirials) {
 //                 ofs<<'\n';
 //                 cout<<'\n';
 //             }
-//     ofs.close();
 
     
     //next potential calculation: just going to use Ex to store it for now
@@ -823,8 +831,8 @@ void FixChargeEwald::compute(bool computeVirials) {
     cufftExecC2C(plan, FFT_Ex, FFT_Ex,  CUFFT_INVERSE);
     cufftExecC2C(plan, FFT_Ey, FFT_Ey,  CUFFT_INVERSE);
     cufftExecC2C(plan, FFT_Ez, FFT_Ez,  CUFFT_INVERSE);
-    cudaDeviceSynchronize();
-    CUT_CHECK_ERROR("cufftExecC2C  E_field execution failed");
+  //  cudaDeviceSynchronize();
+   // CUT_CHECK_ERROR("cufftExecC2C  E_field execution failed");
     
     
     /*//test area
@@ -896,29 +904,27 @@ void FixChargeEwald::compute(bool computeVirials) {
 
 
     float *neighborCoefs = state->specialNeighborCoefs;
-    
      if (computeVirials) {
-           GPUArrayGlobal<Virial>virial(1);
           int warpSize = state->devManager.prop.warpSize;
-          virial.d_data.memset(0);
-          
-          virials_cu<<<dimGrid, dimBlock,sizeof(Virial)*dimBlock.x*dimBlock.y*dimBlock.z>>>(state->boundsGPU,sz,virial.getDevData(),alpha,Green_function.getDevData(), FFT_Qs, warpSize); 
+            virialField.memset(0); 
+          virials_cu<<<dimGrid, dimBlock,sizeof(Virial)*dimBlock.x*dimBlock.y*dimBlock.z>>>(state->boundsGPU,sz,virialField.data(),alpha,Green_function.getDevData(), FFT_Qs, warpSize); 
           CUT_CHECK_ERROR("virials_cu kernel execution failed");    
           
 
 
  /*         sum_virials_cu <<<NBLOCK(sz.x*sz.y*sz.z/(double)N_DATA_PER_THREAD),PERBLOCK,N_DATA_PER_THREAD*sizeof(Virial)*PERBLOCK>>>
                   (virial.getDevData(),virials.getDevData(),sz.x*sz.y*sz.z, warpSize); */  
-          virial.dataToHost();
+        //  virial.dataToHost();
 
-          cout<<"field_virial "<<virial.h_data[0][0]<<' '<<virial.h_data[0][1]<<' '<<virial.h_data[0][2]<<' '<<virial.h_data[0][3]<<' '<<virial.h_data[0][4]<<' '<<virial.h_data[0][5]<<' '<<'\n';
-
+        //  cout<<"field_virial "<<virial.h_data[0][0]<<' '<<virial.h_data[0][1]<<' '<<virial.h_data[0][2]<<' '<<virial.h_data[0][3]<<' '<<virial.h_data[0][4]<<' '<<virial.h_data[0][5]<<' '<<'\n';
+       //     cudaDeviceSynchronize();
           BoundsGPU &b=state->boundsGPU;
           float volume=b.volume();          
-          Virial virial_per_particle = Virial();  
-          for (int i=0; i<6; i++) {
-              virial_per_particle.vals[i] = virial.h_data[0][i]/volume/nAtoms;
-          }
+        //  Virial virial_per_particle = Virial(0, 0, 0, 0, 0, 0);  
+        //  for (int i=0; i<6; i++) {
+        //      virial_per_particle.vals[i] = virial.h_data[0][i]/volume/nAtoms;
+        //      cout << virial_per_particle.vals[i] << endl;
+        //  }
       
           compute_short_range_forces_cu<true><<<NBLOCK(nAtoms), PERBLOCK>>>( nAtoms,
                                               gpd.xs(activeIdx),                                                      
@@ -931,9 +937,7 @@ void FixChargeEwald::compute(bool computeVirials) {
                                               r_cut,
                                               state->boundsGPU,
                                               state->devManager.prop.warpSize, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],
-                                              gpd.virials.d_data.data(),virial_per_particle);
-          gpd.virials.dataToHost();
-          cout<<"total_virial "<<gpd.virials.h_data[0].vals[0]<<' '<<gpd.virials.h_data[0].vals[1]<<' '<<gpd.virials.h_data[0].vals[2]<<' '<<gpd.virials.h_data[0].vals[3]<<' '<<gpd.virials.h_data[0].vals[4]<<' '<<gpd.virials.h_data[0].vals[5]<<' '<<'\n';
+                                              gpd.virials.d_data.data(), virialField.data(), volume);
     }else{
           compute_short_range_forces_cu<false><<<NBLOCK(nAtoms), PERBLOCK>>>( nAtoms,
                                               gpd.xs(activeIdx),                                                      
@@ -946,7 +950,7 @@ void FixChargeEwald::compute(bool computeVirials) {
                                               r_cut,
                                               state->boundsGPU,
                                               state->devManager.prop.warpSize, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],
-                                              gpd.virials.d_data.data(),Virial());
+                                              gpd.virials.d_data.data(), virialField.data(), 0);
     }
     CUT_CHECK_ERROR("Ewald_short_range_forces_cu  execution failed");
 
@@ -956,6 +960,9 @@ void FixChargeEwald::compute(bool computeVirials) {
 void FixChargeEwald::singlePointEng(float * perParticleEng) {
     CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
+    if (state->boundsGPU != boundsLastOptimize) {
+        handleChangedBounds(false);
+    }
 //     cout<<"FixChargeEwald::compute..\n";
     int nAtoms = state->atoms.size();
     GPUData &gpd = state->gpd;
@@ -963,11 +970,6 @@ void FixChargeEwald::singlePointEng(float * perParticleEng) {
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     
-    if (first_run){
-        first_run=false;
-        find_optimal_parameters();
-        calc_Green_function();
-    }
     
      
 

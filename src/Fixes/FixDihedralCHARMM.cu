@@ -1,87 +1,65 @@
 #include "helpers.h"
-#include "FixDihedralOPLS.h"
+#include "FixDihedralCHARMM.h"
 #include "FixHelpers.h"
 #include "cutils_func.h"
 #include "DihedralEvaluate.h"
 namespace py = boost::python;
 using namespace std;
 
-const std::string dihedralOPLSType = "DihedralOPLS";
+const std::string dihedralCHARMMType = "DihedralCHARMM";
 
 
-FixDihedralOPLS::FixDihedralOPLS(SHARED(State) state_, string handle) : FixPotentialMultiAtom (state_, handle, dihedralOPLSType, true){
+FixDihedralCHARMM::FixDihedralCHARMM(SHARED(State) state_, string handle) : FixPotentialMultiAtom (state_, handle, dihedralCHARMMType, true){
     readFromRestart();
 }
 
 
-void FixDihedralOPLS::compute(bool computeVirials) {
+void FixDihedralCHARMM::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_dihedral<DihedralOPLSType, DihedralEvaluatorOPLS, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralOPLSType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_dihedral<DihedralCHARMMType, DihedralEvaluatorCHARMM, true><<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralCHARMMType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     } else {
-        compute_force_dihedral<DihedralOPLSType, DihedralEvaluatorOPLS, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralOPLSType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_dihedral<DihedralCHARMMType, DihedralEvaluatorCHARMM, false><<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralCHARMMType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     }
 
 }
 
-void FixDihedralOPLS::singlePointEng(float *perParticleEng) {
+void FixDihedralCHARMM::singlePointEng(float *perParticleEng) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralOPLSType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralCHARMMType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
 
 
 
-void FixDihedralOPLS::createDihedral(Atom *a, Atom *b, Atom *c, Atom *d, double v1, double v2, double v3, double v4, int type) {
-    double vs[4] = {v1, v2, v3, v4};
+void FixDihedralCHARMM::createDihedral(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, double k, int n, double d, int type) {
     if (type==-1) {
-        for (int i=0; i<4; i++) {
-            assert(vs[i] != COEF_DEFAULT);
-        }
+        assert(k != COEF_DEFAULT);
+        assert(n != COEF_DEFAULT);
+        assert(d != COEF_DEFAULT);
     }
-    forcers.push_back(DihedralOPLS(a, b, c, d, vs, type));
+    forcers.push_back(DihedralCHARMM(atomA, atomB, atomC, atomD, k, n, d, type));
     pyListInterface.updateAppendedMember();
 }
 
 
-void FixDihedralOPLS::createDihedralPy(Atom *a, Atom *b, Atom *c, Atom *d, py::list coefs, int type) {
-    double coefs_c[4];
-    if (type!=-1) {
-        createDihedral(a, b, c, d, COEF_DEFAULT, COEF_DEFAULT, COEF_DEFAULT, COEF_DEFAULT, type);
-    } else {
-        assert(len(coefs) == 4);
-        for (int i=0; i<4; i++) {
-            py::extract<double> coef(coefs[i]);
-            assert(coef.check());
-            coefs_c[i] = coef;
-        }
-        createDihedral(a, b, c, d, coefs_c[0], coefs_c[1], coefs_c[2], coefs_c[3], type);
 
-    }
-}
-
-void FixDihedralOPLS::setDihedralTypeCoefs(int type, py::list coefs) {
-    assert(len(coefs)==4);
-    double coefs_c[4];
-    for (int i=0; i<4; i++) {
-        py::extract<double> coef(coefs[i]);
-        assert(coef.check());
-        coefs_c[i] = coef;
-    }
-
-    DihedralOPLS dummy(coefs_c, type);
+void FixDihedralCHARMM::setDihedralTypeCoefs(int type, double k, int n, double d) {
+    DihedralCHARMM dummy(k, n, d, type);
     setForcerType(type, dummy);
 }
 
-bool FixDihedralOPLS::readFromRestart() {
+bool FixDihedralCHARMM::readFromRestart() {
+    /*
+       implement later pls
     auto restData = getRestartNode();
     if (restData) {
         auto curr_node = restData.first_child();
@@ -101,7 +79,7 @@ bool FixDihedralOPLS::readFromRestart() {
                     coefs[1] = atof(coef_b.c_str());
                     coefs[2] = atof(coef_c.c_str());
                     coefs[3] = atof(coef_d.c_str());
-                    DihedralOPLS dummy(coefs, type);
+                    DihedralCHARMM dummy(coefs, type);
                     setForcerType(type, dummy);
                 }
             } else if (tag == "members") {
@@ -141,29 +119,35 @@ bool FixDihedralOPLS::readFromRestart() {
             curr_node = curr_node.next_sibling();
         }
     }
+    */
     return true;
 }
 
 
-void export_FixDihedralOPLS() {
-    py::class_<FixDihedralOPLS,
-                          SHARED(FixDihedralOPLS),
+void export_FixDihedralCHARMM() {
+    py::class_<FixDihedralCHARMM,
+                          SHARED(FixDihedralCHARMM),
                           py::bases<Fix, TypedItemHolder> > (
-        "FixDihedralOPLS",
+        "FixDihedralCHARMM",
         py::init<SHARED(State), string> (
             py::args("state", "handle")
         )
     )
-    .def("createDihedral", &FixDihedralOPLS::createDihedralPy,
-            (py::arg("coefs")=py::list(),
+    .def("createDihedral", &FixDihedralCHARMM::createDihedral,
+            (py::arg("k")=COEF_DEFAULT,
+            py::arg("n")=COEF_DEFAULT,
+            py::arg("d")=COEF_DEFAULT,
              py::arg("type")=-1)
         )
 
-    .def("setDihedralTypeCoefs", &FixDihedralOPLS::setDihedralTypeCoefs, 
+    .def("setDihedralTypeCoefs", &FixDihedralCHARMM::setDihedralTypeCoefs, 
             (py::arg("type"), 
-             py::arg("coefs"))
+            py::arg("k")=COEF_DEFAULT,
+            py::arg("n")=COEF_DEFAULT,
+            py::arg("d")=COEF_DEFAULT
             )
-    .def_readonly("dihedrals", &FixDihedralOPLS::pyForcers)
+        )
+    .def_readonly("dihedrals", &FixDihedralCHARMM::pyForcers)
 
     ;
 

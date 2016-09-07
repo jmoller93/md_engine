@@ -24,6 +24,7 @@ public:
      *                  z-direction
      */
     BoundsGPU(float3 lo_, float3 rectComponents_, float3 periodic_) {
+        //consider calcing invrectcomponents using doubles
         lo = lo_;
         rectComponents = rectComponents_;
         invRectComponents = 1.0f / rectComponents;
@@ -100,7 +101,7 @@ public:
         float3 old = rectComponents;
         rectComponents *= scaleBy;
         float3 diff = rectComponents - old;
-        lo += diff / 2.0f;
+        lo -= diff / 2.0f;
         invRectComponents = 1 / rectComponents;
 
     }

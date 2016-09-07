@@ -9,6 +9,7 @@
 #include "FixImproperHarmonic.h"
 #include "FixDihedralOPLS.h"
 #include "FixDihedralGauss.h"
+#include "FixDihedralCHARMM.h"
 #include "FixLJCut.h"
 #include "FixLJCutFS.h"
 #include "FixTICG.h"
