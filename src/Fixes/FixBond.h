@@ -86,9 +86,6 @@ class FixBond : public Fix, public TypedItemHolder {
         std::vector<BondVariant> bonds;
         boost::python::list pyBonds;
         VariantPyListInterface<BondVariant, CPUMember> pyListInterface;
-        int sharedMemSizeForParams;
-        bool usingSharedMemForParams;
-
         int maxBondsPerBlock;
         std::unordered_map<int, BONDTYPEHOLDER> bondTypes;
         
@@ -140,7 +137,7 @@ class FixBond : public Fix, public TypedItemHolder {
             maxBondsPerBlock = copyBondsToGPU<CPUMember, GPUMember, BONDTYPEHOLDER>(
                     atoms, bonds, state->idToIdx, &bondsGPU, &bondIdxs, &parameters, maxExistingType, bondTypes);
            // maxbondsPerBlock = copyMultiAtomToGPU<CPUVariant, CPUBase, CPUMember, GPUMember, ForcerTypeHolder, N>(state->atoms.size(), forcers, state->idToIdx, &forcersGPU, &forcerIdxs, &forcerTypes, &parameters, maxExistingType);
-            setSharedMemForParams();
+
             return true;
         } 
 

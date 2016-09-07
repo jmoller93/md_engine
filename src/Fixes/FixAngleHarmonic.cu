@@ -35,6 +35,9 @@ void FixAngleHarmonic::singlePointEng(float *perParticleEng) {
         compute_energy_angle<<<NBLOCK(nAtoms), PERBLOCK, sizeof(AngleGPU) * maxForcersPerBlock + sharedMemSizeForParams>>>(nAtoms, state->gpd.xs(activeIdx), perParticleEng, state->gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), usingSharedMemForParams, evaluator);
     }
 }
+//void cumulativeSum(int *data, int n);
+// okay, so the net result of this function is that two arrays (items, idxs of
+// items) are on the gpu and we know how many bonds are in bondiest block
 
 void FixAngleHarmonic::createAngle(Atom *a, Atom *b, Atom *c, double k, double theta0, int type) {
     vector<Atom *> atoms = {a, b, c};
