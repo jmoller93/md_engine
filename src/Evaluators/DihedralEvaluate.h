@@ -1,5 +1,5 @@
 template <class DIHEDRALTYPE, class EVALUATOR, bool COMPUTEVIRIALS> //don't need DihedralGPU, are all DihedralGPU.  Worry about later 
-__global__ void compute_force_dihedral(int nAtoms, float4 *xs, float4 *forces, int *idToIdxs, DihedralGPU *dihedrals, int *startstops, BoundsGPU bounds, DIHEDRALTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
+__global__ void compute_force_dihedral(int nAtoms, float4 *xs, float4 *forces, int *idToIdxs, DihedralGPU *dihedrals, int *startstops, BoundsGPU bounds, DIHEDRALTYPE *parameters, int nParameters, Virial *virials, EVALUATOR evaluator) {
 
 
     int idx = GETIDX();
@@ -8,14 +8,9 @@ __global__ void compute_force_dihedral(int nAtoms, float4 *xs, float4 *forces, i
     int idxEndCopy = startstops[min(nAtoms, blockDim.x*(blockIdx.x+1))];
     DihedralGPU *dihedrals_shr = (DihedralGPU *) all_shr;
     int sizeDihedrals = (idxEndCopy - idxBeginCopy) * sizeof(DihedralGPU);
+    DIHEDRALTYPE *parameters_shr = (DIHEDRALTYPE *) (all_shr + sizeDihedrals);
     copyToShared<DihedralGPU>(dihedrals + idxBeginCopy, dihedrals_shr, idxEndCopy - idxBeginCopy);
-    DIHEDRALTYPE *parameters;
-    if (usingSharedMemForParams) {
-        parameters = (DIHEDRALTYPE *) (all_shr + sizeDihedrals);
-        copyToShared<DIHEDRALTYPE>(parameters_arg, parameters, nParameters);
-    } else {
-        parameters = parameters_arg;
-    }
+    copyToShared<DIHEDRALTYPE>(parameters, parameters_shr, nParameters);
     __syncthreads();
     if (idx < nAtoms) {
   //      printf("going to compute %d\n", idx);
@@ -39,7 +34,7 @@ __global__ void compute_force_dihedral(int nAtoms, float4 *xs, float4 *forces, i
                 uint32_t typeFull = dihedral.type;
                 myIdxInDihedral = typeFull >> 29;
                 int type = (typeFull << 3) >> 3;
-                DIHEDRALTYPE dihedralType = parameters[type];
+                DIHEDRALTYPE dihedralType = parameters_shr[type];
                 //USE SHARED AGAIN ONCE YOU FIGURE OUT BUG
 
                 float3 positions[4];
@@ -171,7 +166,7 @@ __global__ void compute_force_dihedral(int nAtoms, float4 *xs, float4 *forces, i
 
 
 template <class DIHEDRALTYPE, class EVALUATOR>
-__global__ void compute_energy_dihedral(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, DihedralGPU *dihedrals, int *startstops, BoundsGPU bounds, DIHEDRALTYPE *parameters_arg, int nParameters, bool usingSharedMemForParams, EVALUATOR evaluator) {
+__global__ void compute_energy_dihedral(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, DihedralGPU *dihedrals, int *startstops, BoundsGPU bounds, DIHEDRALTYPE *parameters, int nParameters, EVALUATOR evaluator) {
 
 
     int idx = GETIDX();
@@ -180,14 +175,9 @@ __global__ void compute_energy_dihedral(int nAtoms, float4 *xs, float *perPartic
     int idxEndCopy = startstops[min(nAtoms, blockDim.x*(blockIdx.x+1))];
     DihedralGPU *dihedrals_shr = (DihedralGPU *) all_shr;
     int sizeDihedrals = (idxEndCopy - idxBeginCopy) * sizeof(DihedralGPU);
+    DIHEDRALTYPE *parameters_shr = (DIHEDRALTYPE *) (all_shr + sizeDihedrals);
     copyToShared<DihedralGPU>(dihedrals + idxBeginCopy, dihedrals_shr, idxEndCopy - idxBeginCopy);
-    DIHEDRALTYPE *parameters;
-    if (usingSharedMemForParams) {
-        parameters = (DIHEDRALTYPE *) (all_shr + sizeDihedrals);
-        copyToShared<DIHEDRALTYPE>(parameters_arg, parameters, nParameters);
-    } else {
-        parameters = parameters_arg;
-    }
+    copyToShared<DIHEDRALTYPE>(parameters, parameters_shr, nParameters);
     __syncthreads();
     if (idx < nAtoms) {
   //      printf("going to compute %d\n", idx);
@@ -211,7 +201,7 @@ __global__ void compute_energy_dihedral(int nAtoms, float4 *xs, float *perPartic
                 uint32_t typeFull = dihedral.type;
                 myIdxInDihedral = typeFull >> 29;
                 int type = (typeFull << 3) >> 3;
-                DIHEDRALTYPE dihedralType = parameters[type];
+                DIHEDRALTYPE dihedralType = parameters_shr[type];
                 //USE SHARED AGAIN ONCE YOU FIGURE OUT BUG
 
                 float3 positions[4];
