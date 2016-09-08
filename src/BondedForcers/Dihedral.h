@@ -11,7 +11,9 @@
 class DihedralOPLS;
 class DihedralGauss;
 class DihedralCHARMM;
+class DihedralPeriodic;
 void export_Dihedrals();
+
 class Dihedral{
     public:
         //going to try storing by id instead.  Makes preparing for a run less intensive
@@ -45,6 +47,23 @@ class DihedralOPLS : public Dihedral, public DihedralOPLSType {
 	std::string getInfoString();
 };
 
+class DihedralPeriodicType {
+    public:
+        float coefs[2];
+        float phiRef;
+        DihedralPeriodicType(DihedralPeriodic *);
+        DihedralPeriodicType(){};
+        bool operator==(const DihedralPeriodicType &) const;
+	std::string getInfoString();
+};
+class DihedralPeriodic : public Dihedral, public DihedralPeriodicType {
+    public:
+        DihedralPeriodic(Atom *a, Atom *b, Atom *c, Atom *d, double coefs_[2], double phiRef_, int type_);
+        DihedralPeriodic(double coefs_[2], double phiRef_, int type_);
+        DihedralPeriodic(){};
+	std::string getInfoString();
+};
+
 class DihedralCHARMMType {
     public:
         float k;
@@ -67,29 +86,6 @@ class DihedralCHARMM: public Dihedral, public DihedralCHARMMType {
 };
 
 
-
-//for forcer maps
-namespace std {
-    template<> struct hash<DihedralOPLSType> {
-        size_t operator() (DihedralOPLSType const& dih) const {
-            size_t seed = 0;
-            for (int i=0; i<4; i++) {
-                boost::hash_combine(seed, dih.coefs[i]);
-            }
-            return seed;
-        }
-    };
-    template<> struct hash<DihedralCHARMMType> {
-        size_t operator() (DihedralCHARMMType const& dih) const {
-            size_t seed = 0;
-            boost::hash_combine(seed, dih.k);
-            boost::hash_combine(seed, dih.n);
-            boost::hash_combine(seed, dih.d);
-            return seed;
-        }
-    };
-}
-
 //Start 3SPN.2 Gaussian dihedrals
 class DihedralGaussType {
     public:
@@ -110,7 +106,37 @@ class DihedralGauss : public Dihedral, public DihedralGaussType {
 	std::string getInfoString();
 };
 
+
+//for forcer maps
 namespace std {
+    template<> struct hash<DihedralOPLSType> {
+        size_t operator() (DihedralOPLSType const& dih) const {
+            size_t seed = 0;
+            for (int i=0; i<4; i++) {
+                boost::hash_combine(seed, dih.coefs[i]);
+            }
+            return seed;
+        }
+    };
+    template<> struct hash<DihedralPeriodicType> {
+        size_t operator() (DihedralPeriodicType const& dih) const {
+            size_t seed = 0;
+            for (int i=0; i<2; i++) {
+                boost::hash_combine(seed, dih.coefs[i]);
+            }
+            boost::hash_combine(seed, dih.phiRef);
+            return seed;
+        }
+    };
+    template<> struct hash<DihedralCHARMMType> {
+        size_t operator() (DihedralCHARMMType const& dih) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, dih.k);
+            boost::hash_combine(seed, dih.n);
+            boost::hash_combine(seed, dih.d);
+            return seed;
+        }
+    };
     template<> struct hash<DihedralGaussType> {
         size_t operator() (DihedralGaussType const& dih) const {
             size_t seed = 0;
@@ -120,13 +146,12 @@ namespace std {
             return seed;
         }
     };
-
-
 }
 
 typedef boost::variant<
     DihedralGauss,
 	DihedralOPLS, 
+    DihedralPeriodic,
     DihedralCHARMM,
     Dihedral	
 > DihedralVariant;

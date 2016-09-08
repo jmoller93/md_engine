@@ -10,6 +10,7 @@
 #include "FixAngleCosineDelta.h"
 #include "FixImproperHarmonic.h"
 #include "FixDihedralOPLS.h"
+#include "FixDihedralPeriodic.h"
 #include "FixDihedralGauss.h"
 #include "FixDihedralCHARMM.h"
 #include "FixLJCut.h"
