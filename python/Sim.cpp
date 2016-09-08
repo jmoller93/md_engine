@@ -47,8 +47,10 @@ BOOST_PYTHON_MODULE(Sim) {
     export_Fix();
     export_FixBondHarmonic();
     export_FixBondFENE();
+    export_FixBondGoLike();
     export_BondHarmonic();
     export_BondFENE();
+    export_BondGoLike();
     
     export_FixAngleBaseStacking();
     export_FixAngleHarmonic();
