@@ -34,6 +34,8 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
         GPUArrayDeviceGlobal<int> forcerIdxs;
         GPUArrayDeviceGlobal<ForcerTypeHolder> parameters;
         VariantPyListInterface<CPUVariant, CPUMember> pyListInterface;
+        int sharedMemSizeForParams;
+        bool usingSharedMemForParams;
         int maxForcersPerBlock;
 
         bool prepareForRun() {
@@ -138,6 +140,18 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
             
         }
 
+        void setSharedMemForParams() {
+            int size = parameters.size() * sizeof(ForcerTypeHolder);
+            //<= 3 is b/c of threshold for using redundant calcs
+            if (size + int(N<=3) * maxForcersPerBlock*sizeof(GPUMember)> state->devManager.prop.sharedMemPerBlock) {
+                usingSharedMemForParams = false;
+                sharedMemSizeForParams = 0;
+            } else {
+                usingSharedMemForParams = true;
+                sharedMemSizeForParams = size;
+            }
+
+        }
 };
 
 #endif
