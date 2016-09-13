@@ -1,0 +1,21 @@
+0                  :: reset mode
+100                  :: simulation mode
+20               :: integration mode
+1                  :: electrostatics mode
+0                  :: pre-equilibration steps
+0                :: equilibration steps
+0                  :: lag steps
+5000000                     :: production steps. should be on the order of 10^6
+10000      :: snapshot frequency. should be on the order of 10^3
+1            :: dumping frequency
+10000      :: calculation status frequency
+1                  :: number of simulation boxes
+5        ::number of molecules or site clusters per box
+834        ::number of base pairs
+5564      ::number of residues per box
+8898      ::number of sites per box
+900                :: number of allowable neighbors
+200000             :: size of output buffers [bytes]
+0                  :: random number generator seed
+0			:: icyc
+2		:: number of DNA molecules

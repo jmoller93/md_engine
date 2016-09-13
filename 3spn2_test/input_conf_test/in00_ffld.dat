@@ -1,0 +1,155 @@
+6	BONDS		kJ/mol/A^2	kJ/mol/A^4		A
+P S				0.6	60.		3.899000
+S A				0.6	60.		4.689000
+S P				0.6	60.		3.559000
+S C				0.6	60.		4.099600
+S T				0.6	60.		4.176300
+S G				0.6	60.		4.824800
+
+49	BENDS		kJ/mol/rad^2	deg
+A S P A                   460.          111.830000
+A S P T                   370.          111.830000
+A S P C                   442.          111.830000
+A S P G                   358.          111.830000
+P S A A                   460.          103.940000
+P S A T                   120.          103.940000
+P S A C                   206.          103.940000
+P S A G                   383.          103.940000
+T S P A                   120.          116.570000
+T S P T                   460.          116.570000
+T S P C                   383.          116.570000
+T S P G                   206.          116.570000
+P S T A                   370.           92.280000
+P S T T                   460.           92.280000
+P S T C                   358.           92.280000
+P S T G                   442.           92.280000
+C S P A                   206.          114.930000
+C S P T                   358.          114.930000
+C S P C                   278.          114.930000
+C S P G                   278.          114.930000
+P S C A                   442.           95.550000
+P S C T                   383.           95.550000
+P S C C                   278.           95.550000
+P S C G                   336.           95.550000
+G S P A                   383.          109.920000
+G S P T                   442.          109.920000
+G S P C                   336.          109.920000
+G S P G                   278.          109.920000
+P S G A                   358.          107.760000
+P S G T                   206.          107.760000
+P S G C                   278.          107.760000
+P S G G                   278.          107.760000
+P S P P                   300.          120.150000
+S A A S                   355.           94.490000
+S A T S                   147.           94.490000
+S A C S                   464.           94.490000
+S A G S                   368.           94.490000
+S T A S                   230.           94.490000
+S T T S                   355.           94.490000
+S T C S                   442.           94.490000
+S T G S                   273.           94.490000
+S C A S                   273.           94.490000
+S C T S                   368.           94.490000
+S C C S                   165.           94.490000
+S C G S                   478.           94.490000
+S G A S                   442.           94.490000
+S G T S                   464.           94.490000
+S G C S                   228.           94.490000
+S G G S                   165.           94.490000
+
+10	TORSIONS	kJ/mol		deg				Gauss width
+A S P S                 0.000000        -212.620000             0.300000
+C S P S                 0.000000        -221.660000             0.300000
+G S P S                 0.000000        -208.930000             0.300000
+P S P S                 7.000000        -334.600000             0.300000
+S P S A                 0.000000        -125.120000             0.300000
+S P S P                 7.000000        -359.370000             0.300000
+S P S C                 0.000000        -122.260000             0.300000
+S P S T                 0.000000        -121.900000             0.300000
+S P S G                 0.000000        -126.310000             0.300000
+T S P S                 0.000000        -224.820000             0.300000
+
+Intrastrand Stacking Energies
+0.000000
+A		A		13.810	3.000	6.000
+A		C		15.820	3.000	6.000
+A		T		15.050	3.000	6.000
+A		G		13.320	3.000	6.000
+C		A		 9.250	3.000	6.000
+C		C		14.010	3.000	6.000
+C		T		12.420	3.000	6.000
+C		G		 8.830	3.000	6.000
+T		A		 9.150	3.000	6.000
+T		C		13.110	3.000	6.000
+T		T		12.440	3.000	6.000
+T		G		 9.580	3.000	6.000
+G		A		13.760	3.000	6.000
+G		C		15.170	3.000	6.000
+G		T		14.590	3.000	6.000
+G		G		14.770	3.000	6.000
+
+Interstrand Cross-Stacking Energy Scale - cstk_1
+0.880000
+A		A		2.139	4.000	8.000
+A		C		1.909	4.000	8.000
+A		T		2.714	4.000	8.000
+A		G		2.772	4.000	8.000
+C		A		1.909	4.000	8.000
+C		C		4.699	4.000	8.000
+C		T		2.916	4.000	8.000
+C		G		1.104	4.000	8.000
+T		A		2.714	4.000	8.000
+T		C		2.916	4.000	8.000
+T		T		2.139	4.000	8.000
+T		G		2.485	4.000	8.000
+G		A		2.772	4.000	8.000
+G		C		1.104	4.000	8.000
+G		T		2.485	4.000	8.000
+G		G		3.693	4.000	8.000
+
+Interstrand Cross-Stacking Energy Scale - cstk_2
+0.880000
+A		A		2.139	4.000	8.000
+A		C		2.485	4.000	8.000
+A		T		2.714	4.000	8.000
+A		G		2.916	4.000	8.000
+C		A		2.485	4.000	8.000
+C		C		3.693	4.000	8.000
+C		T		2.772	4.000	8.000
+C		G		1.104	4.000	8.000
+T		A		2.714	4.000	8.000
+T		C		2.772	4.000	8.000
+T		T		2.139	4.000	8.000
+T		G		1.909	4.000	8.000
+G		A		2.916	4.000	8.000
+G		C		1.104	4.000	8.000
+G		T		1.909	4.000	8.000
+G		G		4.699	4.000	8.000
+
+Base Pairing Energy Scales
+0.880000
+A		T		16.372218	2.000000	12.000000
+C		G		20.727228	2.000000	12.000000
+
+        1.000000                ::  energy scale, van der Waals [kJ/mol]
+        5.820000                ::  length scale, AT separation [A]
+        5.520000                ::  length scale, GC separation [A]
+        0.270000                ::  length scale, inverse sugar width [1/A]
+        13.383000               ::  length scale, sugar-sugar separation [A]
+        18.000000               ::  length scale, short range native contact cutoff [A]
+        50.000000               ::  length scale, long range force field cutoff [A]
+        0.020000                ::  temporal scale, integration differential [ps]
+        1.666667                ::  DNA-protein electrostatic scale factor
+        0.250000                ::  DNA-protin generic LJ factor
+
+
+
+#### NOTE: Not used in simulation! #####
+in00_ffld.dat generated using the following scale factors:
+
+Santalucia shift: 0.610000
+Protozanova shift: 15.000000
+Bond scaling factor: 2.600000
+Bend scaling factor: 7.500000
+Torsion scaling factor: 0.310000
+Hydrogen bond scaling factor: 0.670000

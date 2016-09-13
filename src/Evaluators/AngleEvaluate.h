@@ -1,14 +1,20 @@
 #define SMALL 0.0001f
 template <class ANGLETYPE, class EVALUATOR, bool COMPUTEVIRIALS>
-__global__ void compute_force_angle(int nAtoms, float4 *xs, float4 *forces, int *idToIdxs, AngleGPU *angles, int *startstops, BoundsGPU bounds, ANGLETYPE *parameters, int nTypes, Virial *__restrict__ virials, EVALUATOR evaluator) {
+__global__ void compute_force_angle(int nAtoms, float4 *xs, float4 *forces, int *idToIdxs, AngleGPU *angles, int *startstops, BoundsGPU bounds, ANGLETYPE *parameters_arg, int nTypes, Virial *__restrict__ virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
     int idx = GETIDX();
     extern __shared__ int all_shr[];
     int idxBeginCopy = startstops[blockDim.x*blockIdx.x];
     int idxEndCopy = startstops[min(nAtoms, blockDim.x*(blockIdx.x+1))];
     AngleGPU *angles_shr = (AngleGPU *) all_shr;
+    ANGLETYPE *parameters;
     ANGLETYPE *parameters_shr = (ANGLETYPE *) (angles_shr + (idxEndCopy - idxBeginCopy));
     copyToShared<AngleGPU>(angles + idxBeginCopy, angles_shr, idxEndCopy - idxBeginCopy);
-    copyToShared<ANGLETYPE>(parameters, parameters_shr, nTypes);
+    if (usingSharedMemForParams) {
+        copyToShared<ANGLETYPE>(parameters_arg, parameters_shr, nTypes);
+        parameters = parameters_shr;
+    } else {
+        parameters = parameters_arg;
+    }
     __syncthreads();
     if (idx < nAtoms) {
         //printf("going to compute %d\n", idx);
@@ -33,7 +39,7 @@ __global__ void compute_force_angle(int nAtoms, float4 *xs, float4 *forces, int 
                 uint32_t typeFull = angle.type;
                 myIdxInAngle = typeFull >> 29;
                 int type = static_cast<int>((typeFull << 3) >> 3);
-                ANGLETYPE angleType = parameters_shr[type];
+                ANGLETYPE angleType = parameters[type];
                 float3 positions[3];
                 positions[myIdxInAngle] = pos;
                 int toGet[2];

@@ -43,6 +43,7 @@ bool Fix::willFire(int64_t t) {
 }
 
 void Fix::setVirialTurnPrepare() {
+    printf("virials for %s requires is %d\n", handle.c_str(), int(requiresVirials));
     if (requiresVirials) {
         double multiple = ceil(state->turn / applyEvery);
         state->dataManager.addVirialTurn(multiple * applyEvery);

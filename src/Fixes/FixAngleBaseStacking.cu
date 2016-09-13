@@ -24,6 +24,7 @@ void FixAngleBaseStacking::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
     GPUData &gpd = state->gpd;
+    /*
     if (computeVirials) {
         compute_force_angle<AngleBaseStackingType, AngleEvaluatorBaseStacking, true> <<<NBLOCK(nAtoms), PERBLOCK, sizeof(AngleGPU) * maxForcersPerBlock + parameters.size() * sizeof(AngleBaseStackingType)>>>(nAtoms, state->gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
     } else {
@@ -31,6 +32,7 @@ void FixAngleBaseStacking::compute(bool computeVirials) {
 
     }
 
+    */
 }
 
 void FixAngleBaseStacking::singlePointEng(float *perParticleEng) {

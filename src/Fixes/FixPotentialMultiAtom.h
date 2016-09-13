@@ -54,7 +54,7 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
                     //
                     //to do: make it so I just cast forcer as a type.  Gave nans last time I tried it
                     ForcerTypeHolder typeHolder = ForcerTypeHolder(&forcer);
-                    std::cout << typeHolder.getInfoString() << std::endl;
+                    //std::cout << typeHolder.getInfoString() << std::endl;
                     bool parameterFound = reverseMap.find(typeHolder) != reverseMap.end();
                     //cout << "is found " << parameterFound << endl;
                     if (parameterFound) {
@@ -70,6 +70,7 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
                 } 
             }
             maxForcersPerBlock = copyMultiAtomToGPU<CPUVariant, CPUBase, CPUMember, GPUMember, ForcerTypeHolder, N>(state->atoms.size(), forcers, state->idToIdx, &forcersGPU, &forcerIdxs, &forcerTypes, &parameters, maxExistingType);
+            setSharedMemForParams();
 
             return true;
         } 
@@ -141,6 +142,7 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
         }
 
         void setSharedMemForParams() {
+            printf("HELLO\n");
             int size = parameters.size() * sizeof(ForcerTypeHolder);
             //<= 3 is b/c of threshold for using redundant calcs
             if (size + int(N<=3) * maxForcersPerBlock*sizeof(GPUMember)> state->devManager.prop.sharedMemPerBlock) {

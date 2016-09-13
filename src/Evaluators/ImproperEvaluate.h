@@ -136,9 +136,10 @@ __global__ void compute_force_improper(int nImpropers, float4 *xs, float4 *fs, i
 
 
 template <class IMPROPERTYPE, class EVALUATOR> 
-__global__ void compute_energy_improper(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, ImproperGPU *impropers, int *startstops, BoundsGPU bounds, IMPROPERTYPE *parameters, int nParameters, EVALUATOR T) {
+__global__ void compute_energy_improper(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, ImproperGPU *impropers, int *startstops, BoundsGPU bounds, IMPROPERTYPE *parameters, int nParameters, bool usingSharedMemForParams, EVALUATOR T) {
+    //UPDATE THIS JACKASS
 
-
+    /*
     int idx = GETIDX();
     extern __shared__ int all_shr[];
     int idxBeginCopy = startstops[blockDim.x*blockIdx.x];
@@ -250,5 +251,5 @@ __global__ void compute_energy_improper(int nAtoms, float4 *xs, float *perPartic
             }
             perParticleEng[idxSelf] += energySum;
         }
-    }
+    }*/
 }

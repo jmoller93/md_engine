@@ -5,6 +5,7 @@
 #include "FixPair.h"
 #include "PairEvaluatorLJRepul.h"
 #include "xml_func.h"
+class EvaluatorWrapper;
 void export_FixLJRepul();
 
 //! Fix for repulsive only Lennard-Jones
@@ -27,6 +28,7 @@ void export_FixLJRepul();
  *                          \right].
  * \f]
  */
+extern const std::string LJRepulType;
 class FixLJRepul : public FixPair {
     public:
         //! Constructor
@@ -71,6 +73,13 @@ class FixLJRepul : public FixPair {
 
         //! Return list of cutoff values
         std::vector<float> getRCuts();
+
+        /*! Run the charge evaluator to check to see if charge
+         *
+         * can be calculated as well.
+         *
+         */
+        void setEvalWrapper();
     public:
         const std::string epsHandle; //!< Handle for parameter epsilon
         const std::string sigHandle; //!< Handle for parameter sigma
@@ -79,7 +88,7 @@ class FixLJRepul : public FixPair {
         std::vector<float> sigmas; //!< vector storing sigma values
         std::vector<float> rCuts; //!< vector storing cutoff distance values
 
-        EvaluatorLJRepul evaluator; //!< Evaluator for generic pair interactions
+        //EvaluatorLJRepul evaluator; //!< Evaluator for generic pair interactions
 };
 
 #endif
