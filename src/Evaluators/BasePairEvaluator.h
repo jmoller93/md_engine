@@ -7,13 +7,20 @@
 #include "BasePair.h"
 class BasePairEvaluator3SPN2{
 public:
-
+    float alpha;
+    float range;
+    BasePairEvaluator3SPN2() {}
+    BasePairEvaluator3SPN2(float alpha_, float range_) {
+        alpha = alpha_;
+        range = range_;
+    }
     //evaluator.force(theta, basepairType, s, distSqrs, directors, invDotProd);
-    inline __device__ float3 force(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], int MyIdxInBasePair) {
+    /*inline __device__ float3 force(BasePair3SPN2Type basepairType, float phi, float alpha, float range, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], int MyIdxInBasePair) {
         float3 myForce = {0,0,0};
         float dPhi = phi - basepairType.phi0;
         float dTheta1 = thetas[0] - basepairType.theta1;
         float dTheta2 = thetas[1] - basepairType.theta2;
+        float cone = range * 2.0f;
         
         float phiFactor = 0.5f * (1.0f + cosf(dPhi));
         float ftor = 0.5f * sinf(dPhi);
@@ -22,8 +29,8 @@ public:
 
         if(lengthSqr(directors[1]) < basepairType.sigma) {
             //Use a purely repulsive Morse potential
-            energyMors = morsRepEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-            forceMors = morsRepForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+            energyMors = morsRepEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+            forceMors = morsRepForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
             if (MyIdxInBasePair == 1) {
                 myForce.x -= forceMors * directors[1].x;
@@ -37,11 +44,11 @@ public:
             }
         }
 
-        if ((dTheta1 >= -M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k*2.0f))) {
-            if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
+        if ((dTheta1 >= -M_PI/(cone)) && (dTheta1 <= M_PI/(cone))) {
+            if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
                 if (MyIdxInBasePair == 0) {
                     float derivofPoten = -ftor * invLens[0] * scValues[0] * energyMors;
@@ -71,15 +78,15 @@ public:
                     myForce.z += derivofPoten * dVector.z;
                 }
             }
-            else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || ((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k)))) {
-                float cosine2 = cosf(basepairType.k*dTheta2);
-                float sine2 = sinf(basepairType.k*dTheta2);
+            else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+                float cosine2 = cosf(range*dTheta2);
+                float sine2 = sinf(range*dTheta2);
                 float hbon_cosine = 1.0f - cosine2 * cosine2;
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - thetas[1] * thetas[1]);
+                float prefactor2 = cone * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - thetas[1] * thetas[1]);
 
                 if (MyIdxInBasePair == 1) {
                     float3 fr1;
@@ -139,16 +146,16 @@ public:
                 }
 
             }
-            else if (((dTheta1 >= M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k))) || ((dTheta1 <= -M_PI/(basepairType.k*2.0f)) && (dTheta1 >= -M_PI/(basepairType.k)))) {
-                float cosine = cosf(basepairType.k*dTheta1);
-                float sine = sinf(basepairType.k*dTheta1);
+            else if (((dTheta1 >= M_PI/(cone)) && (dTheta1 <= M_PI/(range))) || ((dTheta1 <= -M_PI/(cone)) && (dTheta1 >= -M_PI/(range)))) {
+                float cosine = cosf(range*dTheta1);
+                float sine = sinf(range*dTheta1);
                 float hbon_cosine = 1.0f - cosine * cosine;
 
-                if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                    forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                    forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                    float prefactor = 2.0f * basepairType.k * cosine * sine * 1.0f/ sqrtf(1.0f - thetas[0] * thetas[0]);
+                    float prefactor = cone * cosine * sine * 1.0f/ sqrtf(1.0f - thetas[0] * thetas[0]);
 
                     if (MyIdxInBasePair == 0) {
                         float3 fr1;
@@ -209,16 +216,16 @@ public:
                         myForce.z += derivofPoten * dVector.z;
                     }
                 }
-                else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || ((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k)))) {
-                    float cosine2 = cosf(basepairType.k*dTheta2);
-                    float sine2 = sinf(basepairType.k*dTheta2);
+                else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+                    float cosine2 = cosf(range*dTheta2);
+                    float sine2 = sinf(range*dTheta2);
                     float hbon_cosine2 = 1.0f - cosine2 * cosine2;
 
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                    forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                    forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                    float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f / sqrtf(1.0f - thetas[1] * thetas[1]);
-                    float prefactor  = 2.0f * basepairType.k * cosine  * sine  * 1.0f / sqrtf(1.0f - thetas[0] * thetas[0]);
+                    float prefactor2 = cone * cosine2 * sine2 * 1.0f / sqrtf(1.0f - thetas[1] * thetas[1]);
+                    float prefactor  = cone * cosine  * sine  * 1.0f / sqrtf(1.0f - thetas[0] * thetas[0]);
 
                     if (MyIdxInBasePair == 0) {
                         float3 fr1;
@@ -294,23 +301,24 @@ public:
         return myForce;
 
 
-    }
+    }*/
 
 
-    inline __device__ void forcesAll(BasePair3SPN2Type basepairType, float phi, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], float3 forces[4]) {
+    inline __device__ void forces(BasePair3SPN2Type basepairType, float phi, float alpha, float range, float thetas[2], float3 cVector, float3 dVector, float scValues[3], float invMagProds[3], float invLens[3], float invLenSqrs[3], float c12Mags[3], float c, float3 directors[3], float3 forces[4]) {
         float dPhi = phi - basepairType.phi0;
         float dTheta1 = thetas[0] - basepairType.theta1;
         float dTheta2 = thetas[1] - basepairType.theta2;
         
         float phiFactor = 0.5f * (1.0f + cosf(dPhi));
         float ftor = 0.5f * sinf(dPhi);
+        float cone = range * 2.0f;
         float energyMors;
         float forceMors;
 
         if(lengthSqr(directors[1]) < basepairType.sigma) {
             //Use a purely repulsive Morse potential
-            energyMors = morsRepEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-            forceMors = morsRepForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+            energyMors = morsRepEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+            forceMors = morsRepForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
             forces[1].x -= forceMors * directors[1].x;
             forces[1].y -= forceMors * directors[1].y;
@@ -320,11 +328,11 @@ public:
             forces[3].z += forceMors * directors[1].z;
         }
 
-        if ((dTheta1 >= -M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k*2.0f))) {
-            if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
+        if ((dTheta1 >= -M_PI/(cone)) && (dTheta1 <= M_PI/(cone))) {
+            if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
                 float fra1 = -ftor * invLens[0] * scValues[0] * energyMors;
                 forces[0].x += fra1 * cVector.x;
@@ -349,15 +357,15 @@ public:
                 forces[3].y += frd1 * dVector.y;
                 forces[3].z += frd1 * dVector.z;
             }
-            else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || ((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k)))) {
-                float cosine2 = cosf(basepairType.k*dTheta2);
-                float sine2 = sinf(basepairType.k*dTheta2);
+            else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+                float cosine2 = cosf(range*dTheta2);
+                float sine2 = sinf(range*dTheta2);
                 float hbon_cosine = 1.0f - cosine2 * cosine2;
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - thetas[1] * thetas[1]);
+                float prefactor2 = cone * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - thetas[1] * thetas[1]);
 
                 float3 fr1;
                 fr1.x = prefactor2 * (invLens[1] * (thetas[1] * directors[1].x * invLens[1] - directors[2].x * invLens[2])) * energyMors - hbon_cosine * directors[2].x * forceMors;
@@ -407,16 +415,16 @@ public:
                 forces[3].z += frd1 * dVector.z;
 
             }
-            else if (((dTheta1 >= M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k))) || ((dTheta1 <= -M_PI/(basepairType.k*2.0f)) && (dTheta1 >= -M_PI/(basepairType.k)))) {
-                float cosine = cosf(basepairType.k*dTheta1);
-                float sine = sinf(basepairType.k*dTheta1);
+            else if (((dTheta1 >= M_PI/(cone)) && (dTheta1 <= M_PI/(range))) || ((dTheta1 <= -M_PI/(cone)) && (dTheta1 >= -M_PI/(range)))) {
+                float cosine = cosf(range*dTheta1);
+                float sine = sinf(range*dTheta1);
                 float hbon_cosine = 1.0f - cosine * cosine;
 
-                if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                    forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                    forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                    float prefactor = 2.0f * basepairType.k * cosine * sine * 1.0f/ sqrtf(1.0f - thetas[0] * thetas[0]);
+                    float prefactor = cone * cosine * sine * 1.0f/ sqrtf(1.0f - thetas[0] * thetas[0]);
 
                     float3 fr1;
                     fr1.x = prefactor * (invLens[0] * (thetas[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors;
@@ -468,16 +476,16 @@ public:
                     forces[3].y += frd1 * dVector.y;
                     forces[3].z += frd1 * dVector.z;
                 }
-                else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || (((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k))))) {
-                    float cosine2 = cosf(basepairType.k*dTheta2);
-                    float sine2 = sinf(basepairType.k*dTheta2);
+                else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || (((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range))))) {
+                    float cosine2 = cosf(range*dTheta2);
+                    float sine2 = sinf(range*dTheta2);
                     float hbon_cosine2 = 1.0f - cosine2 * cosine2;
 
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
-                    forceMors = morsAttrForc(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                    forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
-                    float prefactor2 = 2.0f * basepairType.k * cosine2 * sine2 * 1.0f / sqrtf(1.0f - thetas[1] * thetas[1]);
-                    float prefactor  = 2.0f * basepairType.k * cosine  * sine  * 1.0f / sqrtf(1.0f - thetas[0] * thetas[0]);
+                    float prefactor2 = cone * cosine2 * sine2 * 1.0f / sqrtf(1.0f - thetas[1] * thetas[1]);
+                    float prefactor  = cone * cosine  * sine  * 1.0f / sqrtf(1.0f - thetas[0] * thetas[0]);
 
                     float3 fr1;
                     fr1.x = prefactor * (invLens[0] * (thetas[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors * hbon_cosine2;
@@ -544,10 +552,11 @@ public:
     }
 
 
-    inline __device__ float energy(BasePair3SPN2Type basepairType, float phi, float thetas[2], float invLens[3], float invLenSqrs[3], float3 directors[3]) {
+    inline __device__ float energy(BasePair3SPN2Type basepairType, float phi, float alpha, float range, float thetas[2], float invLens[3], float invLenSqrs[3], float3 directors[3]) {
         float dPhi = phi - basepairType.phi0;
         float dTheta1 = thetas[0] - basepairType.theta1;
         float dTheta2 = thetas[1] - basepairType.theta2;
+        float cone = 2.0f * range;
         
         float phiFactor = 0.5f * (1.0f + cosf(dPhi));
         float ftor = 0.5f * sinf(dPhi);
@@ -556,43 +565,43 @@ public:
 
         if(lengthSqr(directors[1]) < basepairType.sigma) {
             //Use a purely repulsive Morse potential
-            energyMors = morsRepEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+            energyMors = morsRepEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
             eBasePair += energyMors * phiFactor;
 
         }
 
-        if ((dTheta1 >= -M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k*2.0f))) {
-            if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
+        if ((dTheta1 >= -M_PI/(cone)) && (dTheta1 <= M_PI/(cone))) {
+            if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
                 eBasePair += phiFactor * energyMors;
 
             }
-            else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || ((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k)))) {
-                float cosine2 = cosf(basepairType.k*dTheta2);
-                float sine2 = sinf(basepairType.k*dTheta2);
+            else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+                float cosine2 = cosf(range*dTheta2);
+                float sine2 = sinf(range*dTheta2);
                 float hbon_cosine = 1.0f - cosine2 * cosine2;
 
-                energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
                 eBasePair += phiFactor * hbon_cosine * energyMors;
 
             }
-            else if (((dTheta1 >= M_PI/(basepairType.k*2.0f)) && (dTheta1 <= M_PI/(basepairType.k))) || ((dTheta1 <= -M_PI/(basepairType.k*2.0f)) && (dTheta1 >= -M_PI/(basepairType.k)))) {
-                float cosine = cosf(basepairType.k*dTheta1);
-                float sine = sinf(basepairType.k*dTheta1);
+            else if (((dTheta1 >= M_PI/(cone)) && (dTheta1 <= M_PI/(range))) || ((dTheta1 <= -M_PI/(cone)) && (dTheta1 >= -M_PI/(range)))) {
+                float cosine = cosf(range*dTheta1);
+                float sine = sinf(range*dTheta1);
                 float hbon_cosine = 1.0f - cosine * cosine;
 
-                if ((dTheta2 >= -M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k*2.0f))) {
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
                     eBasePair += phiFactor * energyMors;
 
                 }
-                else if (((dTheta2 >= M_PI/(basepairType.k*2.0f)) && (dTheta2 <= M_PI/(basepairType.k))) || ((dTheta2 <= -M_PI/(basepairType.k*2.0f)) && (dTheta2 >= -M_PI/(basepairType.k)))) {
-                    float cosine2 = cosf(basepairType.k*dTheta2);
-                    float sine2 = sinf(basepairType.k*dTheta2);
+                else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+                    float cosine2 = cosf(range*dTheta2);
+                    float sine2 = sinf(range*dTheta2);
                     float hbon_cosine2 = 1.0f - cosine2 * cosine2;
 
-                    energyMors = morsAttrEnrgy(invLens[1], basepairType.alpha, basepairType.epsi, basepairType.sigma);
+                    energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
                     eBasePair += phiFactor * hbon_cosine2 * energyMors;
 
 

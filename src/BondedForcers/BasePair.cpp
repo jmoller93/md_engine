@@ -4,7 +4,7 @@
 namespace py = boost::python;
 
 //3SPN.2 Base Pairs as a four atom bonded potential
-BasePair3SPN2::BasePair3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_) {
+BasePair3SPN2::BasePair3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double epsi_, double theta1_, double theta2_, int type_) {
     ids[0] = a->id;
     ids[1] = b->id;
     ids[2] = c->id;
@@ -12,23 +12,19 @@ BasePair3SPN2::BasePair3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, d
 
     phi0 = phi0_;
     sigma = sigma_;
-    k = k_;
     epsi = epsi_;
-    alpha = alpha_;
     theta1 = theta1_;
     theta2 = theta2_;
     type = type_;
 }
 
-BasePair3SPN2::BasePair3SPN2(double phi0_, double sigma_, double k_, double epsi_, double alpha_, double theta1_, double theta2_, int type_) {
+BasePair3SPN2::BasePair3SPN2(double phi0_, double sigma_, double epsi_,  double theta1_, double theta2_, int type_) {
     for (int i=0; i<4; i++) {
         ids[i] = -1;
     }
     phi0 = phi0_;
     sigma = sigma_;
-    k = k_;
     epsi = epsi_;
-    alpha = alpha_;
     theta1 = theta1_;
     theta2 = theta2_;
     type = type_;
@@ -50,9 +46,7 @@ void BasePairGPU::takeIds(BasePair *other) {
 BasePair3SPN2Type::BasePair3SPN2Type(BasePair3SPN2 *basepair) {
     phi0  = basepair->phi0;
     sigma = basepair->sigma;
-    k     = basepair->k;
     epsi  = basepair->epsi;
-    alpha = basepair->alpha;
     theta1 = basepair->theta1;
     theta2 = basepair->theta2;
 
@@ -60,13 +54,13 @@ BasePair3SPN2Type::BasePair3SPN2Type(BasePair3SPN2 *basepair) {
 
 std::string BasePair3SPN2::getInfoString() {
   std::stringstream ss;
-  ss << "<member type='" << type << "' atomID_a='" << ids[0] << "' atomID_b='" << ids[1] << "' atomID_c='" << ids[2] << "' atomID_d='" << ids[3] << "' phi0='" << phi0<< "'sigma='" << sigma << "' k='" << k << "' epsi='" << epsi << "' alpha='" << alpha << "' theta1='" << theta1 << "' theta2='" << theta2 <<  "'/>\n";
+  ss << "<member type='" << type << "' atomID_a='" << ids[0] << "' atomID_b='" << ids[1] << "' atomID_c='" << ids[2] << "' atomID_d='" << ids[3] << "' phi0='" << phi0<< "'sigma='" << sigma << "' epsi='" << epsi << "' theta1='" << theta1 << "' theta2='" << theta2 <<  "'/>\n";
   return ss.str();
 }
 
 std::string BasePair3SPN2Type::getInfoString() {
   std::stringstream ss;
-  ss << " phi0='" << phi0<< "' sigma='" << sigma << "' k='" << k << "' epsi='" << epsi << "' alpha='" << alpha << "' theta1='" << theta1 << "' theta2='" << theta2;
+  ss << " phi0='" << phi0<< "' sigma='" << sigma << "' epsi='" << epsi << "' theta1='" << theta1 << "' theta2='" << theta2;
   return ss.str();
 }
 
@@ -77,13 +71,7 @@ bool BasePair3SPN2Type::operator==(const BasePair3SPN2Type &other) const {
     else if (sigma != other.sigma) {
         return false;
     }
-    else if (k != other.k) {
-        return false;
-    }
     else if (epsi != other.epsi) {
-        return false;
-    }
-    else if (alpha != other.alpha) {
         return false;
     }
     else if (theta1 != other.theta1) {
@@ -100,9 +88,7 @@ void export_BasePairs() {
         .def_readwrite("type", &BasePair3SPN2::type)
         .def_readonly("phi0", &BasePair3SPN2::phi0)
         .def_readonly("sigma", &BasePair3SPN2::sigma)
-        .def_readonly("k", &BasePair3SPN2::k)
         .def_readonly("epsi", &BasePair3SPN2::epsi)
-        .def_readonly("alpha", &BasePair3SPN2::alpha)
         .def_readonly("theta1", &BasePair3SPN2::theta1)
         .def_readonly("theta2", &BasePair3SPN2::theta2)
         .def_readonly("ids", &BasePair3SPN2::ids)

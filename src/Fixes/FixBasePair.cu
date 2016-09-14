@@ -13,6 +13,18 @@ FixBasePair3SPN2::FixBasePair3SPN2(SHARED(State) state_, string handle) : FixPot
       readFromRestart();
 }
 
+void FixBasePair3SPN2::setParameters(float alpha_,float range_)
+{
+  alpha=alpha_;
+  range=range_;
+}
+
+bool FixBasePair3SPN2::prepareForRun() {
+    evaluator = BasePairEvaluator3SPN2(alpha, range);
+    FixPotentialMultiAtom::prepareForRun();
+    return true;
+}
+
 
 void FixBasePair3SPN2::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
@@ -21,19 +33,20 @@ void FixBasePair3SPN2::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
     } else {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range,gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
     }
 
 }
 
+//Define specific parameters for all base pairing interactions
 void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_basepair<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_basepair<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
@@ -42,7 +55,7 @@ void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
 
 void FixBasePair3SPN2::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double phi0, double sigma, double epsi, double theta1, double theta2, int type) {
     if (type==-1) {
-            assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k!=COEF_DEFAULT and epsi!=COEF_DEFAULT and alpha!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
+            assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
     }
     forcers.push_back(BasePair3SPN2(a, b, c, d, phi0, sigma, epsi, theta1, theta2, type));
     pyListInterface.updateAppendedMember();
@@ -50,7 +63,7 @@ void FixBasePair3SPN2::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double
 
 void FixBasePair3SPN2::setBasePairTypeCoefs(int type, double phi0, double sigma, double epsi, double theta1, double theta2) {
     assert(sigma>0);
-    BasePair3SPN2 dummy(phi0, sigma, k, epsi, alpha, theta1, theta2, type);
+    BasePair3SPN2 dummy(phi0, sigma, epsi, theta1, theta2, type);
     setForcerType(type, dummy);
 }
 
@@ -157,6 +170,10 @@ void export_FixBasePair3SPN2() {
              py::arg("theta2"))
         )
 
+    .def("setParameters", &FixBasePair3SPN2::setParameters,
+            (py::arg("alpha"), py::arg("range"))
+        )
+    
     .def_readonly("basepairs", &FixBasePair3SPN2::pyForcers)
 
     ;
