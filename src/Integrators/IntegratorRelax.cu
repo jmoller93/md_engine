@@ -108,7 +108,7 @@ double IntegratorRelax::run(int numTurns, double fTol) {
 
     //set velocity to 0
     // 	state->gpd.vs.memsetByVal(make_float3(0.0f,0.0f,0.0f);
-    SAFECALL((zero_vel_cu<<<nblock, PERBLOCK>>>(atomssize,state->gpd.vs.getDevData())));
+    zero_vel_cu<<<nblock, PERBLOCK>>>(atomssize,state->gpd.vs.getDevData());
     CUT_CHECK_ERROR("zero_vel_cu kernel execution failed");
 
     //vars to store kernels outputs
@@ -118,31 +118,26 @@ double IntegratorRelax::run(int numTurns, double fTol) {
     GPUArrayGlobal<float>force(1);
 
     //neighborlist build
-    SAFECALL((state->gridGPU.periodicBoundaryConditions(-1, true)));
+    state->gridGPU.periodicBoundaryConditions(-1, true);
     DataManager &dataManager = state->dataManager;
     for (int i=0; i<numTurns; i++) {
-        printf("TURN IS %d\n", i);
         //init to 0 on cpu and gpu
         VDotV.memsetByVal(0.0);
         VDotF.memsetByVal(0.0);
         FDotF.memsetByVal(0.0);
         bool computeVirialsInForce = dataManager.virialTurns.find(state->turn) != dataManager.virialTurns.end();
-        for (int t : dataManager.virialTurns) {
-            printf("Virial turn %d\n", t);
-
-        }
 
         //vdotF calc
         if (! ((remainder + i) % periodicInterval)) {
-            SAFECALL((state->gridGPU.periodicBoundaryConditions()));
+            state->gridGPU.periodicBoundaryConditions();
         }
         asyncOperations();
 
-        SAFECALL((vdotF_cu <<<nblock,PERBLOCK,sizeof(float)*PERBLOCK>>>(
+        vdotF_cu <<<nblock,PERBLOCK,sizeof(float)*PERBLOCK>>>(
                     VDotF.getDevData(),
                     state->gpd.vs.getDevData(),
                     state->gpd.fs.getDevData(),
-                    atomssize)));
+                    atomssize);
         CUT_CHECK_ERROR("vdotF_cu kernel execution failed");
         VDotF.dataToHost();
 
@@ -225,7 +220,7 @@ double IntegratorRelax::run(int numTurns, double fTol) {
                             dt);
         CUT_CHECK_ERROR("FIRE_preForce_cu kernel execution failed");
 
-        SAFECALL((Integrator::forceSingle(computeVirialsInForce)));
+        Integrator::forceSingle(computeVirialsInForce);
 
         if (fTol > 0 and i > delay and not (i%delay)) { //only check every so often
             //total force calc

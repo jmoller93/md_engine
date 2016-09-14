@@ -53,8 +53,7 @@ void IntegratorUtil::singlePointEng() {
 void IntegratorUtil::forceSingle(bool computeVirials) {
     for (Fix *f : state->fixes) {
         if (f->forceSingle and f->willFire(state->turn)) {
-            std::cout << "Computing for fix " << f->handle << std::endl;
-            SAFECALL((f->compute(computeVirials)));
+            f->compute(computeVirials);
             f->setVirialTurn();
         }
     }

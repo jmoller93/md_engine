@@ -21,8 +21,8 @@ public:
     void compute(bool);
     void singlePointEng(float *);
 
-    void createBasePair(Atom *, Atom *, Atom *, Atom *, double, double, double, double, double, double, double,  int);
-    void setBasePairTypeCoefs(int, double, double, double, double, double, double, double);
+    void createBasePair(Atom *, Atom *, Atom *, Atom *, double, double, double, double, double,  int);
+    void setBasePairTypeCoefs(int, double, double, double, double, double);
 
     bool readFromRestart(pugi::xml_node restData);
 

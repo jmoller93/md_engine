@@ -142,7 +142,6 @@ class FixPotentialMultiAtom : public Fix, public TypedItemHolder {
         }
 
         void setSharedMemForParams() {
-            printf("HELLO\n");
             int size = parameters.size() * sizeof(ForcerTypeHolder);
             //<= 3 is b/c of threshold for using redundant calcs
             if (size + int(N<=3) * maxForcersPerBlock*sizeof(GPUMember)> state->devManager.prop.sharedMemPerBlock) {

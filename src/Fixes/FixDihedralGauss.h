@@ -25,7 +25,7 @@ public:
     void setDihedralTypeCoefs(int, double, double, double);
 
     //std::vector<pair<int, std::vector<int> > > neighborlistExclusions();
-    bool readFromRestart(pugi::xml_node restData);
+    bool readFromRestart();
 
 };
 

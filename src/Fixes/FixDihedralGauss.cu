@@ -10,13 +10,7 @@ const std::string dihedralGaussType = "DihedralGauss";
 
 
 FixDihedralGauss::FixDihedralGauss(SHARED(State) state_, string handle) : FixPotentialMultiAtom (state_, handle, dihedralGaussType, true){
-  if (state->readConfig->fileOpen) {
-    auto restData = state->readConfig->readFix(type, handle);
-    if (restData) {
-      std::cout << "Reading restart data for fix " << handle << std::endl;
-      readFromRestart(restData);
-    }
-  }
+      readFromRestart();
 }
 
 
@@ -62,7 +56,9 @@ void FixDihedralGauss::setDihedralTypeCoefs(int type, double phi0, double sigma,
     setForcerType(type, dummy);
 }
 
-bool FixDihedralGauss::readFromRestart(pugi::xml_node restData) {
+bool FixDihedralGauss::readFromRestart() {
+  auto restData = getRestartNode();
+  if(restData) {
   auto curr_node = restData.first_child();
   while (curr_node) {
     string tag = curr_node.name();
@@ -118,6 +114,7 @@ bool FixDihedralGauss::readFromRestart(pugi::xml_node restData) {
       }
     }
     curr_node = curr_node.next_sibling();
+  }
   }
   return true;
 }
