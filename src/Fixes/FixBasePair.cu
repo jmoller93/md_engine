@@ -33,9 +33,9 @@ void FixBasePair3SPN2::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
     } else {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range,gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), alpha, range,gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
     }
 
 }
@@ -46,7 +46,7 @@ void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_basepair<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_basepair<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
