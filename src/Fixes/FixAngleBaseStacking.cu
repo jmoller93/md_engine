@@ -14,6 +14,17 @@ FixAngleBaseStacking::FixAngleBaseStacking(boost::shared_ptr<State> state_, stri
 
 namespace py = boost::python;
 
+void FixAngleBaseStacking::setParameters(float alpha_, float range_) {
+    alpha = alpha_;
+    range = range_;
+}
+
+bool FixAngleBaseStacking::prepareForRun() {
+    evaluator = AngleEvaluatorBaseStacking(alpha, range);
+    FixPotentialMultiAtom::prepareForRun();
+    return true;
+}
+
 void FixAngleBaseStacking::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
@@ -36,20 +47,20 @@ void FixAngleBaseStacking::singlePointEng(float *perParticleEng) {
 // okay, so the net result of this function is that two arrays (items, idxs of
 // items) are on the gpu and we know how many bonds are in bondiest block
 
-void FixAngleBaseStacking::createAngle(Atom *a, Atom *b, Atom *c, double k, double theta0, double epsi, double sigma, double alpha, int type) {
+void FixAngleBaseStacking::createAngle(Atom *a, Atom *b, Atom *c, double theta0, double epsi, double sigma, int type) {
     vector<Atom *> atoms = {a, b, c};
     validAtoms(atoms);
     if (type == -1) {
-        assert(k!=COEF_DEFAULT and theta0!=COEF_DEFAULT and epsi!=COEF_DEFAULT and sigma!=COEF_DEFAULT and alpha!=COEF_DEFAULT);
+        assert(theta0!=COEF_DEFAULT and epsi!=COEF_DEFAULT and sigma!=COEF_DEFAULT);
     }
-    forcers.push_back(AngleBaseStacking(a, b, c, k, theta0, epsi, sigma, alpha, type));
+    forcers.push_back(AngleBaseStacking(a, b, c, theta0, epsi, sigma, type));
     pyListInterface.updateAppendedMember();
 }
 
-void FixAngleBaseStacking::setAngleTypeCoefs(int type, double k, double theta0, double epsi, double sigma, double alpha) {
+void FixAngleBaseStacking::setAngleTypeCoefs(int type, double theta0, double epsi, double sigma) {
     //cout << type << " " << k << " " << theta0 << endl;
     mdAssert(theta0>=0 and theta0 <= M_PI, "Angle theta must be between zero and pi");
-    AngleBaseStacking dummy(k, theta0, epsi, sigma, alpha);
+    AngleBaseStacking dummy(theta0, epsi, sigma);
     setForcerType(type, dummy);
 }
 
@@ -63,43 +74,33 @@ bool FixAngleBaseStacking::readFromRestart() {
             if (tag == "types") {
                 for (auto type_node = curr_node.first_child(); type_node; type_node = type_node.next_sibling()) {
                     int type;
-                    double k;
                     double theta0;
                     double epsi;
                     double sigma;
-                    double alpha;
                     std::string type_ = type_node.attribute("id").value();
                     type = atoi(type_.c_str());
-                    std::string k_ = type_node.attribute("k").value();
                     std::string theta0_ = type_node.attribute("theta0").value();
                     std::string epsi_ = type_node.attribute("epsi").value();
                     std::string sigma_ = type_node.attribute("sigma").value();
-                    std::string alpha_ = type_node.attribute("alpha").value();
-                    k = atof(k_.c_str());
                     theta0 = atof(theta0_.c_str());
                     epsi = atof(epsi_.c_str());
                     sigma = atof(sigma_.c_str());
-                    alpha = atof(alpha_.c_str());
-                    setAngleTypeCoefs(type, k, theta0, epsi, sigma, alpha);
+                    setAngleTypeCoefs(type, theta0, epsi, sigma);
                 }
             } else if (tag == "members") {
                 for (auto member_node = curr_node.first_child(); member_node; member_node = member_node.next_sibling()) {
                     int type;
-                    double k;
                     double theta0;
                     double epsi;
                     double sigma;
-                    double alpha;
                     int ids[3];
                     std::string type_ = member_node.attribute("type").value();
                     std::string atom_a = member_node.attribute("atom_a").value();
                     std::string atom_b = member_node.attribute("atom_b").value();
                     std::string atom_c = member_node.attribute("atom_c").value();
-                    std::string k_ = member_node.attribute("k").value();
                     std::string theta0_ = member_node.attribute("theta0").value();
                     std::string epsi_ = member_node.attribute("epsi").value();
                     std::string sigma_ = member_node.attribute("sigma").value();
-                    std::string alpha_ = member_node.attribute("alpha").value();
                     type = atoi(type_.c_str());
                     ids[0] = atoi(atom_a.c_str());
                     ids[1] = atoi(atom_b.c_str());
@@ -107,13 +108,11 @@ bool FixAngleBaseStacking::readFromRestart() {
                     Atom * a = &state->idToAtom(ids[0]);
                     Atom * b = &state->idToAtom(ids[1]);
                     Atom * c = &state->idToAtom(ids[2]);
-                    k = atof(k_.c_str());
                     theta0 = atof(theta0_.c_str());
                     epsi = atof(epsi_.c_str());
                     sigma = atof(sigma_.c_str());
-                    alpha = atof(alpha_.c_str());
 
-                    createAngle(a, b, c, k, theta0, epsi, sigma, alpha, type);
+                    createAngle(a, b, c, theta0, epsi, sigma, type);
                 }
             }
             curr_node = curr_node.next_sibling();
@@ -131,21 +130,21 @@ void export_FixAngleBaseStacking() {
                                 boost::python::args("state", "handle"))
     )
     .def("createAngle", &FixAngleBaseStacking::createAngle,
-            (boost::python::arg("k")=COEF_DEFAULT,
-             boost::python::arg("theta0")=COEF_DEFAULT,
+            (boost::python::arg("theta0")=COEF_DEFAULT,
              boost::python::arg("epsi")=COEF_DEFAULT,
              boost::python::arg("sigma")=COEF_DEFAULT,
-             boost::python::arg("alpha")=COEF_DEFAULT,
              boost::python::arg("type")=-1)
         )
     .def("setAngleTypeCoefs", &FixAngleBaseStacking::setAngleTypeCoefs,
             (boost::python::arg("type")=-1,
-             boost::python::arg("k")=COEF_DEFAULT,
              boost::python::arg("theta0")=COEF_DEFAULT,
              boost::python::arg("epsi")=COEF_DEFAULT,
-             boost::python::arg("sigma")=COEF_DEFAULT,
-             boost::python::arg("alpha")=COEF_DEFAULT)
+             boost::python::arg("sigma")=COEF_DEFAULT)
         )
+
+    .def("setParameters", &FixAngleBaseStacking::setParameters,
+            boost::python::arg("alpha"), boost::python::arg("range"))
+
     .def_readonly("angles", &FixAngleBaseStacking::pyForcers)
     ;
 }

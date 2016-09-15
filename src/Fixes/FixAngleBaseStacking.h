@@ -12,17 +12,22 @@ class FixAngleBaseStacking : public FixPotentialMultiAtom<AngleVariant, AngleBas
 
 private:
     AngleEvaluatorBaseStacking evaluator; 
+protected:
+    float alpha;
+    float range;
 public:
     //DataSet *eng;
     //DataSet *press;
 
     FixAngleBaseStacking(boost::shared_ptr<State> state_, std::string handle);
 
+    void setParameters(float, float);
+    bool prepareForRun();
     void compute(bool);
     void singlePointEng(float *);
 
-    void createAngle(Atom *, Atom *, Atom *, double, double, double, double, double, int type_);
-    void setAngleTypeCoefs(int, double, double, double, double, double);
+    void createAngle(Atom *, Atom *, Atom *, double, double, double, int type_);
+    void setAngleTypeCoefs(int, double, double, double);
 
     bool readFromRestart();
 

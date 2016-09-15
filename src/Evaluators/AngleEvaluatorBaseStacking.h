@@ -1,12 +1,19 @@
 #pragma once
-#ifndef EVALUATOR_ANGLE_COSINE_DELTA_
-#define EVALUATOR_ANGLE_COSINE_DELTA
+#ifndef EVALUATOR_ANGLE_BASE_STACKING
+#define EVALUATOR_ANGLE_BASE_STACKING
 
 #include "cutils_math.h"
 #include "Angle.h"
 #define EPSILON 0.00001f
 class AngleEvaluatorBaseStacking{
 public:
+    float range;
+    float alpha;
+    AngleEvaluatorBaseStacking() {};
+    AngleEvaluatorBaseStacking(float alpha_, float range_) {
+        range = range_;
+        alpha = alpha_;
+    }
 
     //evaluator.force(theta, angleType, s, distSqrs, directors, invDotProd);
     inline __device__ float3 force(AngleBaseStackingType angleType, float theta, float s, float c, float distSqrs[2], float3 directors[2], float invDistProd, int myIdxInAngle) {
@@ -21,8 +28,8 @@ public:
         if(r2 < angleType.sigma)
         {
             //Use a purely repulsive Morse potential
-            float argu = angleType.alpha * (r2 - angleType.sigma);
-            fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+            float argu = alpha * (r2 - angleType.sigma);
+            fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
             if (myIdxInAngle == 1) {
                 frepul -= fmorse * directors[1];
             }
@@ -31,10 +38,10 @@ public:
             }
         }
 
-        if ((dTheta >= -M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/(angleType.k*2.0f))) {
+        if ((dTheta >= -M_PI/(range*2.0f)) && (dTheta <= M_PI/(range*2.0f))) {
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
-                fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+                float argu = alpha * (r2 - angleType.sigma);
+                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
@@ -49,12 +56,12 @@ public:
             }
         }
 
-        else if (((dTheta >= M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/angleType.k))
-            || ((dTheta <= -M_PI/(angleType.k*2.0f)) && (dTheta >= - M_PI/angleType.k))) {
+        else if (((dTheta >= M_PI/(range*2.0f)) && (dTheta <= M_PI/range))
+            || ((dTheta <= -M_PI/(range*2.0f)) && (dTheta >= - M_PI/range))) {
             //Calculate attractive-only Morse
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
-                fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+                float argu = alpha * (r2 - angleType.sigma);
+                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
@@ -62,10 +69,10 @@ public:
                 emorse = -angleType.epsi;
             }
 
-            float cosine = cosf(angleType.k * dTheta);
+            float cosine = cosf(range * dTheta);
             float cosine_term  = 1.0f - cosine * cosine;
-            float sine = sinf(angleType.k * dTheta);
-            float prefactor = 2.0f * angleType.k * cosine * sine * 1.0/sqrtf(1.0-c*c);
+            float sine = sinf(range * dTheta);
+            float prefactor = 2.0f * range * cosine * sine * 1.0/sqrtf(1.0-c*c);
             float a = -prefactor * emorse;
 
             float a11 = a*c/distSqrs[0];
@@ -111,16 +118,16 @@ public:
         if(r2 < angleType.sigma)
         {
             //Use a purely repulsive Morse poten
-            float argu = angleType.alpha * (r2 - angleType.sigma);
-            fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+            float argu = alpha * (r2 - angleType.sigma);
+            fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
             forces[1] -= fmorse * directors[1];
             forces[2] += fmorse * directors[1];
         }
 
-        if ((dTheta >= -M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/(angleType.k*2.0f))) {
+        if ((dTheta >= -M_PI/(range*2.0f)) && (dTheta <= M_PI/(range*2.0f))) {
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
-                fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+                float argu = alpha * (r2 - angleType.sigma);
+                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
@@ -131,12 +138,12 @@ public:
             forces[2] += fmorse * directors[1];
         }
 
-        else if (((dTheta >= M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/angleType.k))
-            || ((dTheta <= -M_PI/(angleType.k*2.0f)) && (dTheta >= - M_PI/angleType.k))) {
+        else if (((dTheta >= M_PI/(range*2.0f)) && (dTheta <= M_PI/range))
+            || ((dTheta <= -M_PI/(range*2.0f)) && (dTheta >= - M_PI/range))) {
             //Calculate attractive-only Morse
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
-                fmorse = -2.0f * angleType.alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+                float argu = alpha * (r2 - angleType.sigma);
+                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
@@ -144,10 +151,10 @@ public:
                 emorse = -angleType.epsi;
             }
 
-            float cosine = cosf(angleType.k * dTheta);
+            float cosine = cosf(range * dTheta);
             float cosine_term  = 1.0f - cosine * cosine;
-            float sine = sinf(angleType.k * dTheta);
-            float prefactor = 2.0f * angleType.k * cosine * sine * 1.0/sqrtf(1.0-c*c);
+            float sine = sinf(range * dTheta);
+            float prefactor = 2.0f * range * cosine * sine * 1.0/sqrtf(1.0-c*c);
             float a = -prefactor * emorse;
 
             float a11 = a*c/distSqrs[0];
@@ -186,13 +193,13 @@ public:
         if(r2 < angleType.sigma)
         {
             //Use a purely repulsive Morse poten
-            float argu = angleType.alpha * (r2 - angleType.sigma);
+            float argu = alpha * (r2 - angleType.sigma);
             emorse += angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu));
         }
 
-        if ((dTheta >= -M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/(angleType.k*2.0f))) {
+        if ((dTheta >= -M_PI/(range*2.0f)) && (dTheta <= M_PI/(range*2.0f))) {
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
+                float argu = alpha * (r2 - angleType.sigma);
                 emorse += angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
@@ -201,18 +208,18 @@ public:
         }
 
         //The cone of shame
-        else if (((dTheta >= M_PI/(angleType.k*2.0f)) && (dTheta <= M_PI/angleType.k))
-            || ((dTheta <= -M_PI/(angleType.k*2.0f)) && (dTheta >= - M_PI/angleType.k))) {
+        else if (((dTheta >= M_PI/(range*2.0f)) && (dTheta <= M_PI/range))
+            || ((dTheta <= -M_PI/(range*2.0f)) && (dTheta >= - M_PI/range))) {
             //Calculate attractive-only Morse
             float estck = 0.0f;
             if (r2 >= angleType.sigma) {
-                float argu = angleType.alpha * (r2 - angleType.sigma);
+                float argu = alpha * (r2 - angleType.sigma);
                 estck = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
             }
             else {
                 estck += -angleType.epsi;
             }
-            float cosine = cosf(dTheta * angleType.k);
+            float cosine = cosf(dTheta * range);
             float cosine_term = 1.0f - cosine * cosine;
             estck *= cosine_term;
             emorse += estck;

@@ -110,6 +110,42 @@ for line in f:
 
 #First up is intrastrand base stacking
 #This generates the epsilon values from the intrastrand interactions
+
+#I think I want the with curvature variant....
+#bstk_sigm[0] = 3.58;
+#bstk_sigm[1] = 3.56;
+#bstk_sigm[2] = 3.85;
+#bstk_sigm[3] = 3.45;
+#bstk_sigm[4] = 4.15;
+#bstk_sigm[5] = 3.93;
+#bstk_sigm[6] = 4.32;
+#bstk_sigm[7] = 3.87;
+#bstk_sigm[8] = 3.51;
+#bstk_sigm[9] = 3.47;
+#bstk_sigm[10] = 3.67;
+#bstk_sigm[11] = 3.42;
+#bstk_sigm[12] = 4.15;
+#bstk_sigm[13] = 3.99;
+#bstk_sigm[14] = 4.34;
+#bstk_sigm[15] = 3.84;
+#
+#bstk_thta[0] = 100.13;
+#bstk_thta[1] = 90.48;
+#bstk_thta[2] = 104.39;
+#bstk_thta[3] = 93.23;
+#bstk_thta[4] = 102.59;
+#bstk_thta[5] = 93.32;
+#bstk_thta[6] = 103.70;
+#bstk_thta[7] = 94.55;
+#bstk_thta[8] = 95.45;
+#bstk_thta[9] = 87.63;
+#bstk_thta[10] = 106.36;
+#bstk_thta[11] = 83.12;
+#bstk_thta[12] = 102.69;
+#bstk_thta[13] = 96.05;
+#bstk_thta[14] = 100.46;
+#bstk_thta[15] = 100.68;
+
 def base_stack(atom1, atom2, atom3, siteId):
     if siteId[atom2] == 'A':
         if siteId[atom3] == 'A':
@@ -152,6 +188,7 @@ f = open('%s/in00_hbon.xml' % wdir).readlines()
 
 #phi0, sigma, k, epsi, alpha, type, theta1, theta2
 basepair = FixBasePair3SPN2(state, 'basepair')
+basepair.setParameters(2.000,12.000)
 rad = math.pi / 180.0
 for line in f:
     bpInfo = line.split()
@@ -176,7 +213,7 @@ for line in f:
         theta1 = 152.74 * rad
         theta2 = 154.62 * rad
 
-    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], (state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, epsi, 2.000, 12.000, theta1, theta2)
+    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], (state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, epsi, theta1, theta2)
 
 state.activateFix(basepair)
 
