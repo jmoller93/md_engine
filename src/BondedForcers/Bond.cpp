@@ -59,7 +59,50 @@ void export_BondHarmonic() {
 
 
 
+//extended harmonic bond (3SPN.2 version)
+bool BondHarmonicExtendType::operator==(const BondHarmonicExtendType &other) const {
+    return k == other.k and r0 == other.r0;
+}
 
+
+
+
+
+BondHarmonicExtend::BondHarmonicExtend(Atom *a, Atom *b, double k_, double r0_, int type_) {
+    ids[0] = a->id;
+    ids[1] = b->id;
+    k = k_;
+    r0 = r0_;
+    type = type_;
+}
+BondHarmonicExtend::BondHarmonicExtend(double k_, double r0_, int type_) {
+    k = k_;
+    r0 = r0_;
+    type = type_;
+}
+
+
+std::string BondHarmonicExtendType::getInfoString() {
+  std::stringstream ss;
+  ss << " k='" << k << "' r0='" << r0;
+  return ss.str();
+}
+
+std::string BondHarmonicExtend::getInfoString() {
+  std::stringstream ss;
+  ss << "<member type='" << type << "' k='" << k << "' r0='" << r0 << "' atomID_a='" << ids[0] <<  "' atomID_b='" << ids[1] << "'/>\n";
+  return ss.str();
+}
+
+void export_BondHarmonicExtend() {
+  
+    boost::python::class_<BondHarmonicExtend,SHARED(BondHarmonicExtend)> ( "BondHarmonicExtend", boost::python::init<>())
+//         .def(boost::python::init<int, int ,double, double,int>())
+        .def_readonly("ids", &BondHarmonicExtend::ids)
+        .def_readwrite("k", &BondHarmonicExtend::k)
+        .def_readwrite("r0", &BondHarmonicExtend::r0)
+    ;
+}
 
 
 

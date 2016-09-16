@@ -53,10 +53,6 @@ namespace std {
  * \todo In LAMMPS k is, in fact, k/2. Specify this explicitely here.
  */
 
-
-
-
-
 class BondHarmonic : public Bond, public BondHarmonicType {
 	public:
         BondHarmonic(Atom *a, Atom *b, double k_, double r0_, int type_=-1);
@@ -68,6 +64,46 @@ class BondHarmonic : public Bond, public BondHarmonicType {
 
 void export_BondHarmonic();
 //end bond harmonic classes
+
+
+
+
+//Extended series harmonic bond (3SPN.2 version)
+class BondHarmonicExtendType {
+public:
+    float k;
+    float r0;
+    BondHarmonicExtendType(){};
+    bool operator==(const BondHarmonicExtendType &) const;
+    std::string getInfoString();
+};
+//
+//for forcer maps
+namespace std {
+    template<> struct hash<BondHarmonicExtendType> {
+        size_t operator() (BondHarmonicExtendType const& bond) const {
+            size_t seed = 0;
+            boost::hash_combine(seed, bond.k);
+            boost::hash_combine(seed, bond.r0);
+            return seed;
+        }
+    };
+}
+
+class BondHarmonicExtend : public Bond, public BondHarmonicExtendType {
+	public:
+        BondHarmonicExtend(Atom *a, Atom *b, double k_, double r0_, int type_=-1);
+        BondHarmonicExtend(double k_, double r0_, int type_=-1); //is this constructor used?
+        BondHarmonicExtend(){};
+        int type;
+	std::string getInfoString();
+};	
+
+void export_BondHarmonicExtend();
+//end bond harmonic extended classes
+
+
+
 
 
 
@@ -178,6 +214,7 @@ class __align__(16) BondGPU {
 /*! \typedef Boost Variant for any bond */
 typedef boost::variant<
 	BondHarmonic, 
+    BondHarmonicExtend,
     BondFENE,
     BondGoLike,
 	Bond
