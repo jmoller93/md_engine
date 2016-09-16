@@ -4,6 +4,7 @@
 
 #include "FixBasePair.h"
 #include "FixBondHarmonic.h"
+#include "FixBondHarmonicExtend.h"
 #include "FixBondFENE.h"
 #include "FixAngleBaseStacking.h"
 #include "FixBondGoLike.h"
