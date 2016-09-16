@@ -5,17 +5,17 @@ import numpy as np
 sys.path = sys.path + ['../build/python/build/lib.linux-x86_64-2.7']
 from Sim import *
 state = State()
-state.deviceManager.setDevice(0)
+state.deviceManager.setDevice(1)
 state.bounds = Bounds(state, lo = Vector(-571.389, -571.389, -571.389), hi = Vector(571.389, 571.389, 571.389))
-state.rCut = 30.0
+state.rCut = 18.0
 state.padding = 0.5
 state.periodicInterval = 100
 state.shoutEvery = 1000
 #I believe this is correct for ps scale
-state.dt = 0.200
+state.dt = 0.0200
 
 #Working directory name (really it's the input directory name, but I'm consistent with Gordo's scripts)
-wdir = 'input_3spn2'
+wdir = 'input_conf_10'
 
 #Define arrays for radii and species names
 sigma = []
@@ -49,9 +49,9 @@ for i in range(len(spcs)):
     for j in range(len(spcs)):
         sig = (sigma[i] + sigma[j])*0.5
         nonbond.setParameter('sig', spcs[i], spcs[j], sig)
-        nonbond.setParameter('eps', spcs[i], spcs[j], 1)
+        nonbond.setParameter('eps', spcs[i], spcs[j], 1.0)
 
-state.activateFix(nonbond)
+#state.activateFix(nonbond)
 
 #Remember the base pair identity of the particle if it is a base pair for
 #later interactions
@@ -69,7 +69,7 @@ f = open('%s/in00_bond.xml' % wdir).readlines()
 bond = FixBondHarmonic(state, 'bond')
 for line in f:
     bondInfo = line.split()
-    bond.createBond(state.atoms[int(bondInfo[1])], state.atoms[int(bondInfo[2])], float(bondInfo[5]), float(bondInfo[4]))
+    bond.createBond(state.atoms[int(bondInfo[1])], state.atoms[int(bondInfo[2])], float(bondInfo[4]), float(bondInfo[5]))
 #state.activateFix(bond)
 
 #Read and activate the bonded angles
@@ -77,7 +77,7 @@ f = open('%s/in00_bend.xml' % wdir).readlines()
 angle = FixAngleHarmonic(state, 'angle')
 for line in f:
     angleInfo = line.split()
-    angle.createAngle(state.atoms[int(angleInfo[1])], state.atoms[int(angleInfo[2])], state.atoms[int(angleInfo[3])], float(angleInfo[6]), float(angleInfo[5]))
+    angle.createAngle(state.atoms[int(angleInfo[1])], state.atoms[int(angleInfo[2])], state.atoms[int(angleInfo[3])], 2.0*float(angleInfo[6]), float(angleInfo[5]))
 state.activateFix(angle)
 
 #Read and activate the bonded dihedrals (Periodic and Gauss)
@@ -102,9 +102,10 @@ f = open('%s/in00_natv.xml' % wdir).readlines()
 natv = FixBondGoLike(state, 'natv')
 for line in f:
     natvInfo = line.split()
-    natv.createBond(state.atoms[int(natvInfo[0])], state.atoms[int(natvInfo[1])], float(natvInfo[2]), float(natvInfo[3]))
+    natv.createBond(state.atoms[int(natvInfo[0])], state.atoms[int(natvInfo[1])], float(natvInfo[3]), float(natvInfo[2]))
 
-#state.activateFix(natv)
+
+state.activateFix(natv)
 
 #All base stacking interactions use functions to help them parse correct inputs
 
@@ -112,76 +113,43 @@ for line in f:
 #This generates the epsilon values from the intrastrand interactions
 
 #I think I want the with curvature variant....
-#bstk_sigm[0] = 3.58;
-#bstk_sigm[1] = 3.56;
-#bstk_sigm[2] = 3.85;
-#bstk_sigm[3] = 3.45;
-#bstk_sigm[4] = 4.15;
-#bstk_sigm[5] = 3.93;
-#bstk_sigm[6] = 4.32;
-#bstk_sigm[7] = 3.87;
-#bstk_sigm[8] = 3.51;
-#bstk_sigm[9] = 3.47;
-#bstk_sigm[10] = 3.67;
-#bstk_sigm[11] = 3.42;
-#bstk_sigm[12] = 4.15;
-#bstk_sigm[13] = 3.99;
-#bstk_sigm[14] = 4.34;
-#bstk_sigm[15] = 3.84;
-#
-#bstk_thta[0] = 100.13;
-#bstk_thta[1] = 90.48;
-#bstk_thta[2] = 104.39;
-#bstk_thta[3] = 93.23;
-#bstk_thta[4] = 102.59;
-#bstk_thta[5] = 93.32;
-#bstk_thta[6] = 103.70;
-#bstk_thta[7] = 94.55;
-#bstk_thta[8] = 95.45;
-#bstk_thta[9] = 87.63;
-#bstk_thta[10] = 106.36;
-#bstk_thta[11] = 83.12;
-#bstk_thta[12] = 102.69;
-#bstk_thta[13] = 96.05;
-#bstk_thta[14] = 100.46;
-#bstk_thta[15] = 100.68;
-
 def base_stack(atom1, atom2, atom3, siteId):
     if siteId[atom2] == 'A':
         if siteId[atom3] == 'A':
-            return 13.810
+            return [13.810,3.58,100.13]
         elif siteId[atom3] == 'C':
-            return 15.820
-        elif siteId[atom3] == 'G':
-            return 13.320
+            return [15.820,3.56,90.48]
         elif siteId[atom3] == 'T':
+            return [15.050,3.85,104.39]
+        elif siteId[atom3] == 'G':
+            return [13.320,3.45,93.23]
     elif siteId[atom2] == 'C':
         if siteId[atom3] == 'A':
-            return 9.250
+            return [9.250,4.15,102.59]
         elif siteId[atom3] == 'C':
-            return 14.010
-        elif siteId[atom3] == 'G':
-            return 8.830
+            return [14.010,3.93,93.32]
         elif siteId[atom3] == 'T':
-            return 12.420
+            return [12.420,4.32,103.70]
+        elif siteId[atom3] == 'G':
+            return [8.830,3.87,94.55]
     elif siteId[atom2] == 'T':
         if siteId[atom3] == 'A':
-            return 9.150
+            return [9.150,3.51,95.45]
         elif siteId[atom3] == 'C':
-            return 13.110
-        elif siteId[atom3] == 'G':
-            return 9.580
+            return [13.110,3.47,87.63]
         elif siteId[atom3] == 'T':
-            return 12.440
+            return [12.440,3.67,106.36]
+        elif siteId[atom3] == 'G':
+            return [9.580,3.42,83.12]
     elif siteId[atom2] == 'G':
         if siteId[atom3] == 'A':
-            return 13.760
+            return [13.760,4.15,102.69]
         elif siteId[atom3] == 'C':
-            return 15.170
-        elif siteId[atom3] == 'G':
-            return 14.770
+            return [15.170,3.99,96.05]
         elif siteId[atom3] == 'T':
-            return 14.590
+            return [14.590,4.34,100.46]
+        elif siteId[atom3] == 'G':
+            return [14.770,3.84,100.68]
 
 #Read and generate the BasePair interactions
 f = open('%s/in00_hbon.xml' % wdir).readlines()
@@ -197,7 +165,7 @@ for line in f:
         phi0 = -38.35 * rad
         theta1 = 156.54 * rad
         theta2 = 135.78 * rad
-    elif(int(bpInfo[0]) == 1:
+    elif int(bpInfo[0]) == 1:
         epsi = 16.372218 * 0.88
         phi0 = -38.35 * math.pi / 180.0
         theta1 = 135.78 * rad
@@ -207,25 +175,25 @@ for line in f:
         phi0 = -45.81 * math.pi / 180.0
         theta1 = 154.62 * rad
         theta2 = 152.74 * rad
-    elif(int(bpInfo[0]) == 3:
+    elif int(bpInfo[0]) == 3:
         epsi = 16.372218 * 0.88
         phi0 = -45.81 * math.pi / 180.0
         theta1 = 152.74 * rad
         theta2 = 154.62 * rad
+    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, epsi, theta1, theta2)
 
-    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], (state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, epsi, theta1, theta2)
+#state.activateFix(basepair)
 
-state.activateFix(basepair)
-
+bstack = FixAngleBaseStacking(state, 'intrastacking')
+bstack.setParameters(3.000,6.000)
 #Read and generate the angle stacking interactions
-f = open('%s/in00_base_stacking.xml' % wdir).readlines()
+f = open('%s/in00_base_stack.xml' % wdir).readlines()
 for line in f:
     stackInfo = line.split()
-    stack = FixAngleBaseStacking(state, 'stacking')
     baseStack = base_stack(int(stackInfo[0]), int(stackInfo[1]), int(stackInfo[2]), siteId)
-    stack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], baseStack, 3.000, 6.000)
+    bstack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], baseStack[2] * math.pi/180.0, baseStack[0], baseStack[1])
 
-state.activateFix(stack)
+#state.activateFix(bstack)
 
 ##Read and generate the cross stacking interactions
 #f = open('%s/in00_base_stacking.xml' % wdir).readlines()
@@ -251,10 +219,10 @@ tempData = state.dataManager.recordTemperature('all', 50)
 engData = state.dataManager.recordEnergy('all', 50)
 
 integRelax = IntegratorRelax(state)
-integRelax.run(1000000, 10)
+integRelax.run(100000, 1)
 integVerlet = IntegratorVerlet(state)
-writeconfig = WriteConfig(state, fn='test_out', writeEvery=10, format='xyz', handle='writer')
+writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-integVerlet.run(100)
+integVerlet.run(1000)
 
 
