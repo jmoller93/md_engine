@@ -20,8 +20,8 @@ public:
         float dTheta = theta - angleType.theta0;
         
         float r2 = sqrtf(distSqrs[1]);
-        float fmorse;
-        float emorse;
+        float fmorse = 0;
+        float emorse = 0;
         float invRange = 1.0f / range;
         float cone = M_PI * invRange;
         float coneHalf = cone * 0.5f;
@@ -31,7 +31,10 @@ public:
         {
             //Use a purely repulsive Morse potential
             float argu = alpha * (r2 - angleType.sigma);
-            fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+            if (r2 > 0) {
+                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
+            }
+            //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
             if (myIdxInAngle == 1) {
                 frepul -= fmorse * directors[1];
             }
@@ -45,6 +48,7 @@ public:
                 float argu = alpha * (r2 - angleType.sigma);
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
+                //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
             }
             else {
                 fmorse = 0.0f;
@@ -65,6 +69,7 @@ public:
                 float argu = alpha * (r2 - angleType.sigma);
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
+                //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
             }
             else {
                 fmorse = 0.0f;

@@ -1,5 +1,5 @@
 template <class BASEPAIRTYPE, class EVALUATOR, bool COMPUTEVIRIALS> //don't need BasePairGPU, are all BasePairGPU.  Worry about later 
-__global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, float alpha, float range, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
+__global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
 
 
     int idx = GETIDX();
@@ -39,7 +39,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, f
         float lens[3]; //bnmag in lammps
         float invLenSqrs[3]; //sb in lammps
         float invLens[3];
-        directors[0] = positions[0] - positions[1];
+        directors[0] = positions[1] - positions[0];
         directors[1] = positions[3] - positions[1];
         directors[2] = positions[3] - positions[2];
         for (int i=0; i<3; i++) {
@@ -53,20 +53,19 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, f
 
      //   printf("c0 is %f\n", c0);
         float c12Mags[3];
-        float invMagProds[3]; //r12c1, 2 in lammps
+        float invMagProds[2]; //r12c1, 2 in lammps
         float dotProd = dot(directors[1], directors[0]);
         dotProd *= -1;
         invMagProds[0] = invLens[0] * invLens[1];
         c12Mags[0] = dotProd * invMagProds[0]; //3spn2 indexing 
-        for (int i=1; i<3; i++) { // 3spn2 indexing
-            float dotProd = dot(directors[2], directors[i]);
-      //      printf("ctmp is %f\n", dotProd);
-            invMagProds[i] = invLens[2] * invLens[i];
-            c12Mags[i] = dotProd * invMagProds[i]; //lammps variable names are opaque
-      //      printf("c12 mag %d %f\n", i, c12Mags[i]);
-        }
+
+        //2nd angle calc now
+        dotProd = dot(directors[2], directors[1]);
+        invMagProds[1] = invLens[2] * invLens[1];
+        c12Mags[1] = dotProd * invMagProds[1]; //lammps variable names are opaque
+
         float thetas[2];
-        thetas[0] = -c12Mags[0];
+        thetas[0] = c12Mags[0];
         thetas[1] = c12Mags[1];
 
         for (int i =0; i<2; i++) {
@@ -79,15 +78,16 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, f
         }
 
 
-        float scValues[3]; //???, is s1, s2, s12 in lammps
-        for (int i=0; i<3; i++) {
+        //IS THIS EVEN NEEDED?????
+        float scValues[2]; //???, is s1, s2, s12 in lammps
+        for (int i=0; i<2; i++) {
             float x = max(1 - c12Mags[i]*c12Mags[i], 0.0f);
             float sqrtVal = max(sqrtf(x), EPSILON);
             scValues[i] = 1.0 / sqrtVal;
         }
 
 
-        for (int i=0; i<3; i++) { //Not sure if I want the squared values
+        for (int i=0; i<2; i++) { //Not sure if I want the squared values
             scValues[i] *= scValues[i]; 
         }
      //   printf("sc values %f %f %f\n", scValues[0], scValues[1], scValues[2]);
@@ -99,9 +99,9 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, f
         cVector.y = directors[0].z*directors[1].x - directors[0].x*directors[1].z;
         cVector.z = directors[0].x*directors[1].y - directors[0].y*directors[1].x;
         float cVectorLen = length(cVector);
-        dVector.x = directors[2].z*directors[0].y - directors[2].y*directors[0].z;
-        dVector.y = directors[2].x*directors[0].z - directors[2].z*directors[0].x;
-        dVector.z = directors[2].y*directors[0].x - directors[2].x*directors[0].y;
+        dVector.x = directors[2].z*directors[1].y - directors[2].y*directors[1].z;
+        dVector.y = directors[2].x*directors[1].z - directors[2].z*directors[1].x;
+        dVector.z = directors[2].y*directors[1].x - directors[2].x*directors[1].y;
         float dVectorLen = length(dVector);
         eVector.x = cVector.z*dVector.y - cVector.y*dVector.z;
         eVector.y = cVector.x*dVector.z - cVector.z*dVector.x;
@@ -124,7 +124,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, f
 
         float3 allForces[4];
 
-        evaluator.forces(basepairType, phi, alpha, range, thetas, cVector, dVector, scValues, invMagProds, invLens, invLenSqrs, c12Mags, c, directors, allForces);
+        evaluator.forces(basepairType, phi, thetas, cVector, dVector, scValues, invMagProds, invLens, invLenSqrs, c12Mags, c, directors, allForces);
 
         for (int i=0; i<4; i++) {
             atomicAdd(&(fs[idxs[i]].x), (allForces[i].x));
