@@ -7,15 +7,15 @@ from Sim import *
 state = State()
 state.deviceManager.setDevice(1)
 state.bounds = Bounds(state, lo = Vector(-571.389, -571.389, -571.389), hi = Vector(571.389, 571.389, 571.389))
-state.rCut = 18.0
+state.rCut = 50.0
 state.padding = 0.5
 state.periodicInterval = 100
 state.shoutEvery = 1000
 #I believe this is correct for ps scale
-state.dt = 0.0200
+state.dt = 0.200
 
 #Working directory name (really it's the input directory name, but I'm consistent with Gordo's scripts)
-wdir = 'input_conf_10'
+wdir = 'input_conf_0'
 
 #Define arrays for radii and species names
 sigma = []
@@ -48,10 +48,11 @@ nonbond = FixLJRepul(state, 'excluded')
 for i in range(len(spcs)):
     for j in range(len(spcs)):
         sig = (sigma[i] + sigma[j])*0.5
+        nonbond.setParameter('rCut', spcs[i], spcs[j], sig)
         nonbond.setParameter('sig', spcs[i], spcs[j], sig)
         nonbond.setParameter('eps', spcs[i], spcs[j], 1.0)
 
-#state.activateFix(nonbond)
+state.activateFix(nonbond)
 
 #Remember the base pair identity of the particle if it is a base pair for
 #later interactions
@@ -66,18 +67,24 @@ for line in f:
 
 #Read the bond information
 f = open('%s/in00_bond.xml' % wdir).readlines()
-bond = FixBondHarmonic(state, 'bond')
+bondDNA  = FixBondHarmonicExtend(state, 'bondDNA')
+bondProt = FixBondHarmonic(state, 'bondProt')
 for line in f:
     bondInfo = line.split()
-    bond.createBond(state.atoms[int(bondInfo[1])], state.atoms[int(bondInfo[2])], float(bondInfo[4]), float(bondInfo[5]))
-#state.activateFix(bond)
+    if float(bondInfo[6]) == 0:
+        bondProt.createBond(state.atoms[int(bondInfo[1])], state.atoms[int(bondInfo[2])], 2.0*float(bondInfo[5]), float(bondInfo[4]))
+    else:
+        bondDNA.createBond(state.atoms[int(bondInfo[1])], state.atoms[int(bondInfo[2])], float(bondInfo[5]), float(bondInfo[4]))
+
+state.activateFix(bondDNA)
+state.activateFix(bondProt)
 
 #Read and activate the bonded angles
 f = open('%s/in00_bend.xml' % wdir).readlines()
 angle = FixAngleHarmonic(state, 'angle')
 for line in f:
     angleInfo = line.split()
-    angle.createAngle(state.atoms[int(angleInfo[1])], state.atoms[int(angleInfo[2])], state.atoms[int(angleInfo[3])], 2.0*float(angleInfo[6]), float(angleInfo[5]))
+    angle.createAngle(state.atoms[int(angleInfo[1])], state.atoms[int(angleInfo[2])], state.atoms[int(angleInfo[3])], float(angleInfo[6]), float(angleInfo[5])*math.pi/180.0)
 state.activateFix(angle)
 
 #Read and activate the bonded dihedrals (Periodic and Gauss)
@@ -87,14 +94,17 @@ dihePeri = FixDihedralPeriodic(state, 'periodic')
 for line in f:
     diheInfo = line.split()
     if int(diheInfo[5]) == 2:
-        diheGauss.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],float(diheInfo[6]) * math.pi / 180.0 + math.pi, float(diheInfo[8]), float(diheInfo[7]))
+        #Theres only a couple forms of dihedral, the rest equal 0
+        if float(diheInfo[7]) != 0:
+            diheGauss.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],float(diheInfo[6]) * math.pi / 180.0, float(diheInfo[8]), float(diheInfo[7]))
+
         coef = [2.0,0.0]
-        dihePeri.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],coef)
+        dihePeri.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],coef,float(diheInfo[6]) * math.pi /180.0)
     else:
         coef = [float(diheInfo[7]), float(diheInfo[8])]
-        dihePeri.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],coef)
+#        dihePeri.createDihedral(state.atoms[int(diheInfo[1])],state.atoms[int(diheInfo[2])],state.atoms[int(diheInfo[3])],state.atoms[int(diheInfo[4])],coef,float(diheInfo[6]) * math.pi /180.0)
 
-#state.activateFix(diheGauss)
+state.activateFix(diheGauss)
 state.activateFix(dihePeri)
 
 #Read and generate the GoLike interactions between the protein sites
@@ -191,6 +201,8 @@ f = open('%s/in00_base_stack.xml' % wdir).readlines()
 for line in f:
     stackInfo = line.split()
     baseStack = base_stack(int(stackInfo[0]), int(stackInfo[1]), int(stackInfo[2]), siteId)
+    print(baseStack)
+    print(siteId[int(stackInfo[0])],siteId[int(stackInfo[1])],siteId[int(stackInfo[2])])
     bstack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], baseStack[2] * math.pi/180.0, baseStack[0], baseStack[1])
 
 #state.activateFix(bstack)
@@ -204,10 +216,10 @@ for line in f:
 #
 #state.activateFix(stack)
 
-InitializeAtoms.initTemp(state, 'all', 2.479)
+InitializeAtoms.initTemp(state, 'all', 0.400)
 
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
-fixNVT = FixLangevin(state, 'temp', 'all', 2.479)
+fixNVT = FixLangevin(state, 'temp', 'all', 0.400)
 
 state.activateFix(fixNVT)
 
@@ -219,10 +231,10 @@ tempData = state.dataManager.recordTemperature('all', 50)
 engData = state.dataManager.recordEnergy('all', 50)
 
 integRelax = IntegratorRelax(state)
-integRelax.run(100000, 1)
+#integRelax.run(100, 1e-4)
 integVerlet = IntegratorVerlet(state)
-writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
+writeconfig = WriteConfig(state, fn='test_out', writeEvery=50, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-integVerlet.run(1000)
+#integVerlet.run(10000)
 
 

@@ -17,12 +17,14 @@ public:
 
     //evaluator.force(theta, angleType, s, distSqrs, directors, invDotProd);
     inline __device__ float3 force(AngleBaseStackingType angleType, float theta, float s, float c, float distSqrs[2], float3 directors[2], float invDistProd, int myIdxInAngle) {
-        float cot = c / s;
         float dTheta = theta - angleType.theta0;
         
         float r2 = sqrtf(distSqrs[1]);
         float fmorse;
         float emorse;
+        float invRange = 1.0f / range;
+        float cone = M_PI * invRange;
+        float coneHalf = cone * 0.5f;
         float3 frepul = make_float3(0.0f, 0.0f, 0.0f);
 
         if(r2 < angleType.sigma)
@@ -38,7 +40,7 @@ public:
             }
         }
 
-        if ((dTheta >= -M_PI/(range*2.0f)) && (dTheta <= M_PI/(range*2.0f))) {
+        if ((dTheta >= -coneHalf) && (dTheta <= coneHalf)) {
             if (r2 >= angleType.sigma) {
                 float argu = alpha * (r2 - angleType.sigma);
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
@@ -56,8 +58,8 @@ public:
             }
         }
 
-        else if (((dTheta >= M_PI/(range*2.0f)) && (dTheta <= M_PI/range))
-            || ((dTheta <= -M_PI/(range*2.0f)) && (dTheta >= - M_PI/range))) {
+        else if (((dTheta >= coneHalf) && (dTheta <= cone))
+            || ((dTheta <= -coneHalf) && (dTheta >= - cone))) {
             //Calculate attractive-only Morse
             if (r2 >= angleType.sigma) {
                 float argu = alpha * (r2 - angleType.sigma);
@@ -72,34 +74,25 @@ public:
             float cosine = cosf(range * dTheta);
             float cosine_term  = 1.0f - cosine * cosine;
             float sine = sinf(range * dTheta);
-            float prefactor = 2.0f * range * cosine * sine * 1.0/sqrtf(1.0-c*c);
+            float prefactor = 2.0f * range * cosine * sine * 1.0f/sqrtf(1.0f-c*c);
             float a = -prefactor * emorse;
 
             float a11 = a*c/distSqrs[0];
             float a12 = -a*invDistProd;
             float a22 = a*c/distSqrs[1];
 
-            float b11 = -a*c*cot/distSqrs[0];
-            float b12 = a*cot*invDistProd;
-            float b22 = -a*c*cot/distSqrs[1];
-
             if (myIdxInAngle==0) {
-                frepul += (directors[0] * a11 + directors[1] * a12) + (directors[0] * b11 + directors[1] * b12);
+                frepul.x += (directors[0].x * a11 + directors[1].x * a12);
+                frepul.y += (directors[0].y * a11 + directors[1].y * a12);
+                frepul.z += (directors[0].z * a11 + directors[1].z * a12);
             } else if (myIdxInAngle==1) {
-                frepul -=
-                    (directors[0] * a11 + directors[1] * a12) + (directors[0] * b11 + directors[1] * b12) 
-                    +
-                    (directors[1] * a22 + directors[0] * a12) + (directors[1] * b22 + directors[0] * b12) 
-                    +
-                    (cosine_term * directors[1] * fmorse)
-                    ;
-
+                frepul.x -= (directors[0].x * a11 + directors[1].x * a12) + (directors[1].x * a22 + directors[0].x * a12 + cosine_term * directors[1].x * fmorse);
+                frepul.y -= (directors[0].y * a11 + directors[1].y * a12) + (directors[1].y * a22 + directors[0].y * a12 + cosine_term * directors[1].y * fmorse); 
+                frepul.z -= (directors[0].z * a11 + directors[1].z * a12) + (directors[1].z * a22 + directors[0].z * a12 + cosine_term * directors[1].z * fmorse);
             } else {
-                frepul += 
-                    (directors[1] * a22 + directors[0] * a12) + (directors[1] * b22 + directors[0] * b12)
-                    +
-                    (cosine_term * directors[1] * fmorse)
-                    ;
+                frepul.x += directors[1].x * a22 + directors[0].x * a12 + (cosine_term * directors[1].x * fmorse);
+                frepul.y += directors[1].y * a22 + directors[0].y * a12 + (cosine_term * directors[1].y * fmorse);
+                frepul.z += directors[1].z * a22 + directors[0].z * a12 + (cosine_term * directors[1].z * fmorse);
             }
         }
 
@@ -107,7 +100,6 @@ public:
 
     }
     inline __device__ void forcesAll(AngleBaseStackingType angleType, float theta, float s, float c, float distSqrs[2], float3 directors[2], float invDistProd, float3 forces[3]) {
-        float cot = c / s;
         float dTheta = theta - angleType.theta0;
         
         float r2 = sqrtf(distSqrs[1]);
@@ -161,24 +153,12 @@ public:
             float a12 = -a*invDistProd;
             float a22 = a*c/distSqrs[1];
 
-            float b11 = -a*c*cot/distSqrs[0];
-            float b12 = a*cot*invDistProd;
-            float b22 = -a*c*cot/distSqrs[1];
+            float3 f1 = directors[0] * a11 + directors[1] * a12;
+            float3 f3 = directors[1] * a22 + directors[0] * a12;
 
-            forces[0] += (directors[0] * a11 + directors[1] * a12) + (directors[0] * b11 + directors[1] * b12);
-            forces[1] -=
-                    (directors[0] * a11 + directors[1] * a12) + (directors[0] * b11 + directors[1] * b12) 
-                    +
-                    (directors[1] * a22 + directors[0] * a12) + (directors[1] * b22 + directors[0] * b12) 
-                    +
-                    (cosine_term * directors[1] * fmorse)
-                    ;
-
-            forces[2] += 
-                    (directors[1] * a22 + directors[0] * a12) + (directors[1] * b22 + directors[0] * b12)
-                    +
-                    (cosine_term * directors[1] * fmorse)
-                    ;
+            forces[0] += f1;
+            forces[1] -= (f1 + f3 + (cosine_term * directors[1] * fmorse));
+            forces[2] += (f3 + (cosine_term * directors[1] * fmorse));
         }
 
 
