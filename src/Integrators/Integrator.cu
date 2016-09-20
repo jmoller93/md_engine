@@ -152,11 +152,13 @@ void Integrator::basicPrepare(int numTurns) {
         f->prepareForRun();
         f->setVirialTurnPrepare();
     }
-    //state->handleChargeOffloading();
+    state->handleChargeOffloading();
     state->gridGPU.periodicBoundaryConditions(-1, true);
     for (boost::shared_ptr<MD_ENGINE::DataSetUser> ds : state->dataManager.dataSets) {
         ds->prepareForRun(); //will also prepare those data sets' computers
-        state->dataManager.addVirialTurn(ds->nextCompute);
+        if (ds->requiresVirials()) {
+            state->dataManager.addVirialTurn(ds->nextCompute);
+        }
     }
 }
 
