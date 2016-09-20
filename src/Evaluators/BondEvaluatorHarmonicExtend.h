@@ -12,7 +12,7 @@ public:
         float rk = 2.0f *bondType.k * dr;
         float rk3 = rk * 200.0f * dr * dr;
         if (r > 0) {//MAKE SURE ALL THIS WORKS, I JUST BORROWED FROM LAMMPS
-            float fBond = -rk3/r;
+            float fBond = -(rk+rk3)/r;
             return bondVec * fBond;
         } 
         return make_float3(0, 0, 0);

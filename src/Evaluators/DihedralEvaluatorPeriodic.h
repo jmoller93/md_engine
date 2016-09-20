@@ -20,8 +20,8 @@ class DihedralEvaluatorPeriodic {
 
             
             return (
-                    - dihedralType.coefs[0] * sinf(diffPhi)
-                    - 3.0f * dihedralType.coefs[1] * sinf(3.0f*diffPhi)
+                    dihedralType.coefs[0] * sinf(diffPhi)
+                    + 3.0f * dihedralType.coefs[1] * sinf(3.0f*diffPhi)
                     )
                 ;
 

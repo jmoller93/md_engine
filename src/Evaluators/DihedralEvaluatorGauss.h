@@ -72,7 +72,7 @@ class DihedralEvaluatorGauss {
 
         inline __device__ float potential(DihedralGaussType dihedralType, float phi) {
 
-            return dihedralType.k0 * (
+            return -dihedralType.k0 * (
                                expf(-(phi - dihedralType.phi0) * (phi - dihedralType.phi0)
                                / (2.0f * dihedralType.sigma * dihedralType.sigma))
                               )
