@@ -46,6 +46,7 @@ BOOST_PYTHON_MODULE(Sim) {
     export_TypedItemHolder();
     export_Fix();
     export_FixBondHarmonic();
+    export_FixBondHarmonicExtend();
     export_FixBondFENE();
     export_FixBondGoLike();
     export_BondHarmonic();

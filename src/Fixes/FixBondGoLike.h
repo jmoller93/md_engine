@@ -35,7 +35,7 @@ public:
         return boost::get<BondGoLike>(bonds[i]);
     }
     virtual std::vector<BondVariant> *getBonds() {
-        return &bonds;
+        return nullptr;
     }
 
     //std::vector<pair<int, std::vector<int> > > neighborlistExclusions();
