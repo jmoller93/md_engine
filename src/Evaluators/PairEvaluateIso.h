@@ -144,7 +144,12 @@ __global__ void compute_energy_iso(int nAtoms, float4 *xs, float *perParticleEng
                 }
                 if (COMP_CHARGES && lenSqr < qCutoffSqr) {
                     float qj = qs[otherIdx];
-                    sumEng += chargeEval.energy(lenSqr, qi, qj, multiplier);
+                    float eng = chargeEval.energy(lenSqr, qi, qj, multiplier);
+                    printf("len is %f\n", sqrtf(lenSqr));
+                    printf("qi qj %f %f\n", qi, qj);
+                    printf("eng is %f\n", eng);
+                    sumEng += eng;
+
                 }
 
             }

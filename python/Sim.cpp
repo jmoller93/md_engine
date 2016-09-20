@@ -102,6 +102,7 @@ BOOST_PYTHON_MODULE(Sim) {
     export_WriteConfig();
     export_InitializeAtoms();
         
+    export_Units();
 
     export_State(); 	
     export_DeviceManager();
