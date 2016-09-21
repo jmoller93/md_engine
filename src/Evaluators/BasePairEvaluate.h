@@ -147,7 +147,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
 
 
 template <class BASEPAIRTYPE, class EVALUATOR>
-__global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perParticleEng, float alpha, float range, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters, int nParameters, EVALUATOR evaluator) {
+__global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters, int nParameters, EVALUATOR evaluator) {
 
 
     /*int idx = GETIDX();
