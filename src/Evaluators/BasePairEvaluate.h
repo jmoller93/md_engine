@@ -52,7 +52,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         }
 
      //   printf("c0 is %f\n", c0);
-        float c12Mags[3];
+        float c12Mags[2];
         float invMagProds[2]; //r12c1, 2 in lammps
         float dotProd = dot(directors[1], directors[0]);
         dotProd *= -1;
@@ -81,36 +81,36 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         //IS THIS EVEN NEEDED?????
         float scValues[2]; //???, is s1, s2, s12 in lammps
         for (int i=0; i<2; i++) {
-            float x = max(1 - c12Mags[i]*c12Mags[i], 0.0f);
+            float x = max(1.0f - c12Mags[i]*c12Mags[i], 0.0f);
             float sqrtVal = max(sqrtf(x), EPSILON);
-            scValues[i] = 1.0 / sqrtVal;
+            scValues[i] = 1.0f / sqrtVal;
         }
+        /*float scValues[2];
+        for(int i=0; i<2; i++) {
+            scValues[i] = sqrtf(1.0f / (1.0f - c12Mags[i] * c12Mags[i]));
+        }*/
 
-
-        for (int i=0; i<2; i++) { //Not sure if I want the squared values
-            scValues[i] *= scValues[i]; 
-        }
-     //   printf("sc values %f %f %f\n", scValues[0], scValues[1], scValues[2]);
+       //printf("sc values %f %f\n", scValues[0], scValues[1]);
      
         float3 cVector; //pad_xyz in 3spn2 lammps
         float3 dVector; //pbc_xyz -> will be sent to compute forces
         float3 eVector; //pac_xyz
+
         cVector.x = directors[0].y*directors[1].z - directors[0].z*directors[1].y;
         cVector.y = directors[0].z*directors[1].x - directors[0].x*directors[1].z;
         cVector.z = directors[0].x*directors[1].y - directors[0].y*directors[1].x;
-        float cVectorLen = length(cVector);
+
         dVector.x = directors[2].z*directors[1].y - directors[2].y*directors[1].z;
         dVector.y = directors[2].x*directors[1].z - directors[2].z*directors[1].x;
         dVector.z = directors[2].y*directors[1].x - directors[2].x*directors[1].y;
-        float dVectorLen = length(dVector);
+
         eVector.x = cVector.z*dVector.y - cVector.y*dVector.z;
         eVector.y = cVector.x*dVector.z - cVector.z*dVector.x;
         eVector.z = cVector.y*dVector.x - cVector.x*dVector.y;
-        float eVectorLen = length(eVector);
-        float dx = dot(eVector, directors[1]) * invLens[1] / eVectorLen;
-        float c = dot(cVector,dVector) / cVectorLen / dVectorLen;
+        float dx = dot(eVector, directors[1]) * invLens[1] * invMagProds[1] * invMagProds[0];
+        float c = -dot(cVector,dVector) * invMagProds[1] * invMagProds[0] * scValues[0] * scValues[1];
 
-    //    printf("c is %f\n", c);
+       //printf("c is %f\n", c);
         if (c > 1.0f) {
             c = 1.0f;
         } else if (c < -1.0f) {
@@ -122,9 +122,25 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
             phi = -phi;
         }
 
+        //isb2 and isd2 in 3spn2 lammps
+        for (int i=0; i<2; i++) { 
+            scValues[i] *= scValues[i]; 
+        }
+
+    //printf("Theta0 is %f, theta1 is %f, and phi is %f\n", thetas[0] * 180.0f/ M_PI, thetas[1] * 180.0f / M_PI, phi * 180.0f / M_PI);
+
         float3 allForces[4];
 
+        for(int i=0; i<4; i++) {
+            allForces[i] = 0.0f * allForces[i];
+        }
+
         evaluator.forces(basepairType, phi, thetas, cVector, dVector, scValues, invMagProds, invLens, invLenSqrs, c12Mags, c, directors, allForces);
+
+        //printf("force 1: %f\t%f\t%f\n", allForces[0].x, allForces[0].y, allForces[0].z);
+        //printf("force 2: %f\t%f\t%f\n", allForces[1].x, allForces[1].y, allForces[1].z);
+        //printf("force 3: %f\t%f\t%f\n", allForces[2].x, allForces[2].y, allForces[2].z);
+        //printf("force 4: %f\t%f\t%f\n", allForces[3].x, allForces[3].y, allForces[3].z);
 
         for (int i=0; i<4; i++) {
             atomicAdd(&(fs[idxs[i]].x), (allForces[i].x));
