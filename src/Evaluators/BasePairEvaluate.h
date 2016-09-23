@@ -55,9 +55,8 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         float c12Mags[2];
         float invMagProds[2]; //r12c1, 2 in lammps
         float dotProd = dot(directors[1], directors[0]);
-        dotProd *= -1;
         invMagProds[0] = invLens[0] * invLens[1];
-        c12Mags[0] = dotProd * invMagProds[0]; //3spn2 indexing 
+        c12Mags[0] = -dotProd * invMagProds[0]; //3spn2 indexing 
 
         //2nd angle calc now
         dotProd = dot(directors[2], directors[1]);
@@ -65,17 +64,18 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         c12Mags[1] = dotProd * invMagProds[1]; //lammps variable names are opaque
 
         float thetas[2];
-        thetas[0] = c12Mags[0];
-        thetas[1] = c12Mags[1];
-
         for (int i =0; i<2; i++) {
-            if (thetas[i] > 1.0f) {
-                thetas[i] = 1.0f;
-            } else if (thetas[i] < -1.0f) {
-                thetas[i] = -1.0f;
+            if (c12Mags[i] > 1.0f) {
+                c12Mags[i] = 1.0f;
+            } else if (c12Mags[i] < -1.0f) {
+                c12Mags[i] = -1.0f;
             }
-            thetas[i] = acosf(thetas[i]);
+            thetas[i] = acosf(c12Mags[i]);
         }
+
+        //float c0 = dot(directors[0], directors[2]) * invLens[0] * invLens[2];
+
+        //printf("theta0 is %f, theta1 is %f\n", thetas[0] * 180.0f / M_PI, thetas[1] * 180.0f / M_PI);
 
 
         //IS THIS EVEN NEEDED?????
@@ -99,16 +99,18 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         cVector.x = directors[0].y*directors[1].z - directors[0].z*directors[1].y;
         cVector.y = directors[0].z*directors[1].x - directors[0].x*directors[1].z;
         cVector.z = directors[0].x*directors[1].y - directors[0].y*directors[1].x;
+        cVector *= invMagProds[0];
 
         dVector.x = directors[2].z*directors[1].y - directors[2].y*directors[1].z;
         dVector.y = directors[2].x*directors[1].z - directors[2].z*directors[1].x;
         dVector.z = directors[2].y*directors[1].x - directors[2].x*directors[1].y;
+        dVector *= invMagProds[1];
 
         eVector.x = cVector.z*dVector.y - cVector.y*dVector.z;
         eVector.y = cVector.x*dVector.z - cVector.z*dVector.x;
         eVector.z = cVector.y*dVector.x - cVector.x*dVector.y;
-        float dx = dot(eVector, directors[1]) * invLens[1] * invMagProds[1] * invMagProds[0];
-        float c = -dot(cVector,dVector) * invMagProds[1] * invMagProds[0] * scValues[0] * scValues[1];
+        float dx = dot(eVector, directors[1]) * invLens[1];
+        float c = -dot(cVector, dVector) * scValues[0] * scValues[1];
 
        //printf("c is %f\n", c);
         if (c > 1.0f) {
@@ -127,7 +129,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
             scValues[i] *= scValues[i]; 
         }
 
-    //printf("Theta0 is %f, theta1 is %f, and phi is %f\n", thetas[0] * 180.0f/ M_PI, thetas[1] * 180.0f / M_PI, phi * 180.0f / M_PI);
+   // printf("Theta0 is %f, theta1 is %f, and phi is %f\n", thetas[0] * 180.0f/ M_PI, thetas[1] * 180.0f / M_PI, phi * 180.0f / M_PI);
 
         float3 allForces[4];
 
