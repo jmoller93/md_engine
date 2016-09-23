@@ -4,15 +4,18 @@ import math
 import numpy as np
 sys.path = sys.path + ['../build/python/build/lib.linux-x86_64-2.7']
 from Sim import *
+
+#We use real units here now
 state = State()
 state.deviceManager.setDevice(1)
+state.units.setLJ()
 state.bounds = Bounds(state, lo = Vector(-571.389, -571.389, -571.389), hi = Vector(571.389, 571.389, 571.389))
 state.rCut = 50.0
 state.padding = 0.5
 state.periodicInterval = 100
 state.shoutEvery = 1000
 #I believe this is correct for ps scale
-state.dt = 0.200
+state.dt = 0.0200
 
 #Working directory name (really it's the input directory name, but I'm consistent with Gordo's scripts)
 wdir = 'input_conf_0'
@@ -59,11 +62,11 @@ state.activateFix(nonbond)
 siteId = []
 
 #Read the input configuration
-f = open('%s/in00_conf.xml' % wdir).readlines()
+f = open('%s/in00_conf_eq.xml' % wdir).readlines()
 for line in f:
     bits = line.split()
     siteId.append(str(bits[0]))
-    state.addAtom(str(bits[0]), Vector(float(bits[1]), float(bits[2]), float(bits[3])))
+    state.addAtom(str(bits[0]), Vector(float(bits[1])*10.0, float(bits[2])*10.0, float(bits[3])*10.0))
 
 #Read the bond information
 f = open('%s/in00_bond.xml' % wdir).readlines()
@@ -127,39 +130,39 @@ def base_stack(atom1, atom2, atom3, siteId):
     if siteId[atom2] == 'A':
         if siteId[atom3] == 'A':
             return [13.810,3.58,100.13]
-        elif siteId[atom3] == 'C':
-            return [15.820,3.56,90.48]
         elif siteId[atom3] == 'T':
-            return [15.050,3.85,104.39]
+            return [15.050,3.56,90.48]
         elif siteId[atom3] == 'G':
-            return [13.320,3.45,93.23]
-    elif siteId[atom2] == 'C':
-        if siteId[atom3] == 'A':
-            return [9.250,4.15,102.59]
+            return [13.320,3.85,104.39]
         elif siteId[atom3] == 'C':
-            return [14.010,3.93,93.32]
-        elif siteId[atom3] == 'T':
-            return [12.420,4.32,103.70]
-        elif siteId[atom3] == 'G':
-            return [8.830,3.87,94.55]
+            return [15.820,3.45,93.23]
     elif siteId[atom2] == 'T':
         if siteId[atom3] == 'A':
-            return [9.150,3.51,95.45]
-        elif siteId[atom3] == 'C':
-            return [13.110,3.47,87.63]
+            return [9.250,4.15,102.59]
         elif siteId[atom3] == 'T':
-            return [12.440,3.67,106.36]
+            return [12.44,3.93,93.32]
         elif siteId[atom3] == 'G':
-            return [9.580,3.42,83.12]
+            return [9.58,4.32,103.70]
+        elif siteId[atom3] == 'C':
+            return [13.11,3.87,94.55]
     elif siteId[atom2] == 'G':
         if siteId[atom3] == 'A':
-            return [13.760,4.15,102.69]
-        elif siteId[atom3] == 'C':
-            return [15.170,3.99,96.05]
+            return [13.76,3.51,95.45]
         elif siteId[atom3] == 'T':
-            return [14.590,4.34,100.46]
+            return [14.59,3.47,87.63]
         elif siteId[atom3] == 'G':
-            return [14.770,3.84,100.68]
+            return [14.77,3.67,106.36]
+        elif siteId[atom3] == 'C':
+            return [15.17,3.42,83.12]
+    elif siteId[atom2] == 'C':
+        if siteId[atom3] == 'A':
+            return [9.25,4.15,102.69]
+        elif siteId[atom3] == 'T':
+            return [12.42,3.99,96.05]
+        elif siteId[atom3] == 'G':
+            return [8.83,4.34,100.46]
+        elif siteId[atom3] == 'C':
+            return [14.01,3.84,100.68]
 
 #Read and generate the BasePair interactions
 f = open('%s/in00_hbon.xml' % wdir).readlines()
@@ -170,29 +173,37 @@ basepair.setParameters(2.000,12.000)
 rad = math.pi / 180.0
 for line in f:
     bpInfo = line.split()
-    if int(bpInfo[0]) == 0:
-        epsi = 16.372218 * 0.88
-        phi0 = -38.35 * rad
-        theta1 = 156.54 * rad
-        theta2 = 135.78 * rad
-    elif int(bpInfo[0]) == 1:
-        epsi = 16.372218 * 0.88
-        phi0 = -38.35 * math.pi / 180.0
-        theta1 = 135.78 * rad
-        theta2 = 156.54 * rad
-    elif int(bpInfo[0]) == 2:
-        epsi = 20.727228 * 0.88
-        phi0 = -45.81 * math.pi / 180.0
-        theta1 = 154.62 * rad
-        theta2 = 152.74 * rad
-    elif int(bpInfo[0]) == 3:
-        epsi = 16.372218 * 0.88
-        phi0 = -45.81 * math.pi / 180.0
-        theta1 = 152.74 * rad
-        theta2 = 154.62 * rad
-    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, epsi, theta1, theta2)
+    #Order is 0 = A, 1 = T, 2 = G, 3 = C
+    if int(bpInfo[0]) == 0: #A
+        epsi = 16.372218 * 0.861
+        phi0 = -38.18 * rad
+        theta1 = 153.17 * rad
+        theta2 = 133.51 * rad
+        sigma = 5.82
+    elif int(bpInfo[0]) == 1: #T
+        epsi = 16.372218 * 0.861
+        phi0 = -38.18 * math.pi / 180.0
+        theta1 = 133.51 * rad
+        theta2 = 153.17 * rad
+        sigma = 5.82
+    elif int(bpInfo[0]) == 2: #G
+        epsi = 20.727228 * 0.861
+        phi0 = -35.75 * math.pi / 180.0
+        theta1 = 159.50 * rad
+        theta2 = 138.08 * rad
+        sigma = 5.552
+    elif int(bpInfo[0]) == 3: #C
+        epsi = 20.727228 * 0.861
+        phi0 = -35.75 * math.pi / 180.0
+        theta1 = 138.08 * rad
+        theta2 = 159.50 * rad
+        sigma = 5.552
+    #print(siteId[int(bpInfo[1])])
+    #print(siteId[int(bpInfo[2])])
+    #print(sigma)
+    basepair.createBasePair(state.atoms[int(bpInfo[1])], state.atoms[int(bpInfo[2])], state.atoms[int(bpInfo[3])], state.atoms[int(bpInfo[4])], phi0, sigma, epsi, theta1, theta2)
 
-#state.activateFix(basepair)
+state.activateFix(basepair)
 
 bstack = FixAngleBaseStacking(state, 'intrastacking')
 bstack.setParameters(3.000,6.000)
@@ -201,11 +212,9 @@ f = open('%s/in00_base_stack.xml' % wdir).readlines()
 for line in f:
     stackInfo = line.split()
     baseStack = base_stack(int(stackInfo[0]), int(stackInfo[1]), int(stackInfo[2]), siteId)
-    print(baseStack)
-    print(siteId[int(stackInfo[0])],siteId[int(stackInfo[1])],siteId[int(stackInfo[2])])
-    bstack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], baseStack[2] * math.pi/180.0, baseStack[0], baseStack[1])
+    bstack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], baseStack[2] * math.pi/180.0, baseStack[0] , baseStack[1])
 
-#state.activateFix(bstack)
+state.activateFix(bstack)
 
 ##Read and generate the cross stacking interactions
 #f = open('%s/in00_base_stacking.xml' % wdir).readlines()
@@ -231,10 +240,13 @@ tempData = state.dataManager.recordTemperature('all', 50)
 engData = state.dataManager.recordEnergy('all', 50)
 
 integRelax = IntegratorRelax(state)
-#integRelax.run(100, 1e-4)
+integRelax.run(100000, 1e-4)
 integVerlet = IntegratorVerlet(state)
-writeconfig = WriteConfig(state, fn='test_out', writeEvery=50, format='xyz', handle='writer')
+writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-#integVerlet.run(10000)
+integVerlet.run(10000)
+#state.dt = 0.0200
+#integVerlet.run(1000)
+
 
 

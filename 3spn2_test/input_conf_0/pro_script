@@ -1,0 +1,15 @@
+#!/bin/bash
+
+
+WDIR="/home/lequieu/Work/dna_nucl/"
+PBONDPATH="/cafemol_for_josh/NUCLEOSOME/sidechain/"
+#PBONDPATH="/cafemol_for_josh/NUCLEOSOME/calpha/"
+#PBONDPATH="inpt_alphac"
+
+$WDIR/FINAL_INPUT_FILES_FOR_PAPER/cbon.x ../dev_input/in00_bond.dat $WDIR/${PBONDPATH}/in00_bond.dat in00_bond.dat 1336
+$WDIR/FINAL_INPUT_FILES_FOR_PAPER/cben.x ../dev_input/in00_bend.dat $WDIR/${PBONDPATH}/in00_bend.dat in00_bend.dat 1336
+$WDIR/FINAL_INPUT_FILES_FOR_PAPER/ctor.x ../dev_input/in00_tors.dat $WDIR/${PBONDPATH}/in00_tors.dat in00_tors.dat 1336
+
+cp ../dev_input/in00_ffld.dat ./
+cp ../dev_input/in00_styp.dat ./
+cp ../../in00_natv_223bp.dat ./in00_natv.dat
