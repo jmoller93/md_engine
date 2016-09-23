@@ -3,6 +3,7 @@
 #define INCLUDEFIXES_H
 
 #include "FixBasePair.h"
+#include "FixCrossStack.h"
 #include "FixBondHarmonic.h"
 #include "FixBondHarmonicExtend.h"
 #include "FixBondFENE.h"
