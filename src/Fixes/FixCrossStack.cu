@@ -55,15 +55,16 @@ void FixCrossStack3SPN2::singlePointEng(float *perParticleEng) {
 
 void FixCrossStack3SPN2::createCrossStack(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, Atom*f, double sigma1, double sigma2, double epsi, double theta1, double theta2, double theta3, int type) {
     if (type==-1) {
-            assert(sigma!=COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT and theta3!=COEF_DEFAULT);
+            assert(sigma1!=COEF_DEFAULT and sigma2!= COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT and theta3!=COEF_DEFAULT);
     }
     forcers.push_back(CrossStack3SPN2(a, b, c, d, e, f, sigma1, sigma2, epsi, theta1, theta2, theta3, type));
     pyListInterface.updateAppendedMember();
 }
 
 void FixCrossStack3SPN2::setCrossStackTypeCoefs(int type, double sigma1, double sigma2, double epsi, double theta1, double theta2, double theta3) {
-    assert(sigma>0);
-    CrossStack3SPN2 dummy(sigma, epsi, theta1, theta2, theta3, type);
+    assert(sigma1>0);
+    assert(sigma2>0);
+    CrossStack3SPN2 dummy(sigma1, sigma2, epsi, theta1, theta2, theta3, type);
     setForcerType(type, dummy);
 }
 
@@ -90,12 +91,13 @@ bool FixCrossStack3SPN2::readFromRestart() {
             std::string theta1_ = type_node.attribute("theta1").value();
             std::string theta2_ = type_node.attribute("theta2").value();
             std::string theta3_ = type_node.attribute("theta3").value();
-            sigma = atof(sigma_.c_str());
+            sigma1 = atof(sigma1_.c_str());
+            sigma2 = atof(sigma2_.c_str());
             epsi  = atof(epsi_.c_str());
             theta1= atof(theta1_.c_str());
             theta2= atof(theta2_.c_str());
             theta3= atof(theta3_.c_str());
-            CrossStack3SPN2 dummy(phi0, sigma, epsi, theta1, theta2, theta3, type);
+            CrossStack3SPN2 dummy(sigma1, sigma2, epsi, theta1, theta2, theta3, type);
             setForcerType(type, dummy);
           }
         } else if (tag == "members") {
@@ -128,8 +130,8 @@ bool FixCrossStack3SPN2::readFromRestart() {
         ids[3] = atoi(atom_d.c_str());
         ids[4] = atoi(atom_e.c_str());
         ids[5] = atoi(atom_f.c_str());
-        sigma1 = atof(sigma_.c_str());
-        sigma2 = atof(sigma_.c_str());
+        sigma1 = atof(sigma1_.c_str());
+        sigma2 = atof(sigma2_.c_str());
         epsi  = atof(epsi_.c_str());
         theta1= atof(theta1_.c_str());
         theta2= atof(theta2_.c_str());

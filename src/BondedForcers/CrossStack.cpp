@@ -12,8 +12,8 @@ CrossStack3SPN2::CrossStack3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, At
     ids[4] = e->id;
     ids[5] = f->id;
 
-    sigma = sigma1_;
-    sigma = sigma2_;
+    sigma1 = sigma1_;
+    sigma2 = sigma2_;
     epsi = epsi_;
     theta1 = theta1_;
     theta2 = theta2_;
