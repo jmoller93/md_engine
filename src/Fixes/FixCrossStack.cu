@@ -53,15 +53,15 @@ void FixCrossStack3SPN2::singlePointEng(float *perParticleEng) {
 
 
 
-void FixCrossStack3SPN2::createCrossStack(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, Atom*f, double sigma, double epsi, double theta1, double theta2, double theta3, int type) {
+void FixCrossStack3SPN2::createCrossStack(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, Atom*f, double sigma1, double sigma2, double epsi, double theta1, double theta2, double theta3, int type) {
     if (type==-1) {
             assert(sigma!=COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT and theta3!=COEF_DEFAULT);
     }
-    forcers.push_back(CrossStack3SPN2(a, b, c, d, e, f, sigma, epsi, theta1, theta2, theta3, type));
+    forcers.push_back(CrossStack3SPN2(a, b, c, d, e, f, sigma1, sigma2, epsi, theta1, theta2, theta3, type));
     pyListInterface.updateAppendedMember();
 }
 
-void FixCrossStack3SPN2::setCrossStackTypeCoefs(int type, double sigma, double epsi, double theta1, double theta2, double theta3) {
+void FixCrossStack3SPN2::setCrossStackTypeCoefs(int type, double sigma1, double sigma2, double epsi, double theta1, double theta2, double theta3) {
     assert(sigma>0);
     CrossStack3SPN2 dummy(sigma, epsi, theta1, theta2, theta3, type);
     setForcerType(type, dummy);
@@ -76,14 +76,16 @@ bool FixCrossStack3SPN2::readFromRestart() {
         if (tag == "types") {
           for (auto type_node = curr_node.first_child(); type_node; type_node = type_node.next_sibling()) {
             int type;
-            double sigma;
+            double sigma1;
+            double sigma2;
             double epsi;
             double theta1;
             double theta2;
             double theta3;
             std::string type_ = type_node.attribute("id").value();
             type = atoi(type_.c_str());
-            std::string sigma_ = type_node.attribute("sigma").value();
+            std::string sigma1_ = type_node.attribute("sigma1").value();
+            std::string sigma2_ = type_node.attribute("sigma2").value();
             std::string epsi_ = type_node.attribute("epsi").value();
             std::string theta1_ = type_node.attribute("theta1").value();
             std::string theta2_ = type_node.attribute("theta2").value();
@@ -99,7 +101,8 @@ bool FixCrossStack3SPN2::readFromRestart() {
         } else if (tag == "members") {
           for (auto member_node = curr_node.first_child(); member_node; member_node = member_node.next_sibling()) {
         int type;
-        double sigma;
+        double sigma1;
+        double sigma2;
         double epsi;
         double theta1;
         double theta2;
@@ -112,7 +115,8 @@ bool FixCrossStack3SPN2::readFromRestart() {
         std::string atom_d = member_node.attribute("atomID_d").value();
         std::string atom_e = member_node.attribute("atomID_e").value();
         std::string atom_f = member_node.attribute("atomID_f").value();
-        std::string sigma_ = member_node.attribute("sigma").value();
+        std::string sigma1_ = member_node.attribute("sigma1").value();
+        std::string sigma2_ = member_node.attribute("sigma2").value();
         std::string epsi_  = member_node.attribute("epsi").value();
         std::string theta1_ = member_node.attribute("theta1").value();
         std::string theta2_ = member_node.attribute("theta2").value();
@@ -124,7 +128,8 @@ bool FixCrossStack3SPN2::readFromRestart() {
         ids[3] = atoi(atom_d.c_str());
         ids[4] = atoi(atom_e.c_str());
         ids[5] = atoi(atom_f.c_str());
-        sigma = atof(sigma_.c_str());
+        sigma1 = atof(sigma_.c_str());
+        sigma2 = atof(sigma_.c_str());
         epsi  = atof(epsi_.c_str());
         theta1= atof(theta1_.c_str());
         theta2= atof(theta2_.c_str());
@@ -141,7 +146,7 @@ bool FixCrossStack3SPN2::readFromRestart() {
         if (d == NULL) {cout << "The fourth atom does not exist" <<endl; return false;};
         if (e == NULL) {cout << "The fifth atom does not exist" <<endl; return false;};
         if (f == NULL) {cout << "The sixth atom does not exist" <<endl; return false;};
-        createCrossStack(a, b, c, d, e, f, sigma, epsi, theta1, theta2, theta3, type);
+        createCrossStack(a, b, c, d, e, f, sigma1, sigma2, epsi, theta1, theta2, theta3, type);
           }
         }
         curr_node = curr_node.next_sibling();
@@ -161,7 +166,8 @@ void export_FixCrossStack3SPN2() {
         )
     )
     .def("createCrossStack", &FixCrossStack3SPN2::createCrossStack,
-            (py::arg("sigma")=-1,
+            (py::arg("sigma1")=-1,
+             py::arg("sigma2")=-1,
              py::arg("epsi")=-1,
              py::arg("theta1")=-1,
              py::arg("theta2")=-1,
@@ -171,7 +177,8 @@ void export_FixCrossStack3SPN2() {
 
     .def("setCrossStackTypeCoefs", &FixCrossStack3SPN2::setCrossStackTypeCoefs, 
             (py::arg("type"), 
-             py::arg("sigma"),
+             py::arg("sigma1"),
+             py::arg("sigma2"),
              py::arg("epsi"),
              py::arg("theta1"),
              py::arg("theta2"),

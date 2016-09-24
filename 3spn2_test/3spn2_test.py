@@ -125,6 +125,8 @@ state.activateFix(natv)
 #First up is intrastrand base stacking
 #This generates the epsilon values from the intrastrand interactions
 
+
+################################################################
 #I think I want the with curvature variant....
 def base_stack(atom1, atom2, atom3, siteId):
     if siteId[atom2] == 'A':
@@ -163,6 +165,172 @@ def base_stack(atom1, atom2, atom3, siteId):
             return [8.83,4.34,100.46]
         elif siteId[atom3] == 'C':
             return [14.01,3.84,100.68]
+
+
+#Parameters for the a-b-e first cross stacking interaction
+def cross_stack_1(atom2, atom5, siteId):
+    if siteId[atom2] == 'A':
+        theta3 = 110.92
+        if siteId[atom5] == 'A':
+            theta1 = 154.04
+            sigma = 6.420
+            eps = 2.139
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'T':
+            theta1 = 158.77
+            sigma = 6.770
+            eps = 2.714
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'G':
+            theta1 = 153.88
+            sigma = 6.270
+            eps = 2.772
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'C':
+            theta1 = 157.69
+            sigma = 6.840
+            eps = 1.909
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+    elif siteId[atom2] == 'T':
+        theta3 = 110.92
+        if siteId[atom5] == 'A':
+            theta1 = 148.62
+            sigma = 6.770
+            eps = 2.714
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'T':
+            theta1 = 155.05
+            sigma = 7.210
+            epsi = 2.139
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'G':
+            theta1 = 147.54
+            sigma = 6.530
+            eps = 2.485
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'C':
+            theta1 = 153.61
+            sigma = 7.080
+            eps = 2.916
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+    elif siteId[atom2] == 'G':
+        theta3 = 120.45
+        if siteId[atom5] == 'A':
+            theta1 = 153.91
+            sigma = 6.270
+            eps = 2.772
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'T':
+            theta1 = 155.72
+            sigma = 6.530
+            eps = 2.485
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'G':
+            theta1 = 151.84
+            sigma = 5.740
+            eps = 3.693
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'C':
+            theta1 = 157.80
+            sigma = 6.860
+            eps = 1.104
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+    elif siteId[atom2] == 'C':
+        theta3 = 120.45
+        if siteId[atom5] == 'A':
+            theta1 = 152.04
+            sigma = 6.840
+            eps = 1.909
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'T':
+            theta1 = 157.72
+            sigma = 7.080
+            eps = 2.916
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'G':
+            theta1 = 151.65
+            sigma = 6.860
+            eps = 1.104
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+        elif siteId[atom5] == 'C':
+            theta1 = 154.49
+            sigma = 6.790
+            eps = 4.699
+            return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
+
+
+#Second cross stacking interaction parameters
+def cross_stack_2(atom4, atom6, siteId):
+    if siteId[atom4] == 'A':
+        if siteId[atom6] == 'A':
+            theta2 = 116.34
+            sigma = 5.580
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'T':
+            theta2 = 119.61
+            sigma = 6.140
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'G':
+            theta2 = 115.19
+            sigma = 5.630
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'C':
+            theta2 = 120.92
+            sigma = 6.180
+            return [theta2 * math.pi /180.0, sigma]
+    elif siteId[atom4] == 'T':
+        if siteId[atom6] == 'A':
+            theta2 = 207.40
+            sigma = 6.140
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'T':
+            theta2 = 110.76
+            sigma = 6.800
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'G':
+            theta2 = 106.33
+            sigma = 6.070
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'C':
+            theta2 = 111.57
+            sigma = 6.640
+            return [theta2 * math.pi /180.0, sigma]
+    elif siteId[atom4] == 'G':
+        if siteId[atom6] == 'A':
+            theta2 = 121.61
+            sigma = 5.630
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'T':
+            theta2 = 124.92
+            sigma = 6.070
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'G':
+            theta2 = 120.52
+            sigma = 5.870
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'C':
+            theta2 = 124.88
+            sigma = 5.660
+            return [theta2 * math.pi /180.0, sigma]
+    elif siteId[atom4] == 'C':
+        if siteId[atom6] == 'A':
+            theta2 = 112.45
+            sigma = 6.180
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'T':
+            theta2 = 115.43
+            sigma = 6.640
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'G':
+            theta2 = 110.51
+            sigma = 5.660
+            return [theta2 * math.pi /180.0, sigma]
+        elif siteId[atom6] == 'C':
+            theta2 = 115.80
+            sigma = 6.800
+            return [theta2 * math.pi /180.0, sigma]
+
+################################################################3
 
 #Read and generate the BasePair interactions
 f = open('%s/in00_hbon.xml' % wdir).readlines()
@@ -217,13 +385,15 @@ for line in f:
 state.activateFix(bstack)
 
 ##Read and generate the cross stacking interactions
-#f = open('%s/in00_base_stacking.xml' % wdir).readlines()
-#for line in f:
-#    stackInfo = line.split()
-#    stack = FixAngleBaseStacking(state, 'stacking')
-#    stack.createAngle(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[3])], float(bpInfo[2]), float(bpInfo[3])/2.5)
-#
-#state.activateFix(stack)
+f = open('%s/in00_cross_stack.xml' % wdir).readlines()
+for line in f:
+    stackInfo = line.split()
+    cstack = FixCrossStack3SPN2(state, 'cross-stack')
+    crossStack1 = cross_stack_1(int(stackInfo[1]), int(stackInfo[4]), siteId)
+    crossStack2 = cross_stack_2(int(stackInfo[3]), int(stackInfo[5]), siteId)
+    cstack.createCrossStack(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], state.atoms[int(stackInfo[3])], state.atoms[int(stackInfo[4])], state.atoms[int(stackInfo[4])], crossStack1[2], crossStack2[1], crossStack1[3], crossStack1[1], crossStack2[0], crossStack1[0])
+
+state.activateFix(cstack)
 
 InitializeAtoms.initTemp(state, 'all', 0.400)
 

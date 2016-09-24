@@ -61,7 +61,9 @@ BOOST_PYTHON_MODULE(Sim) {
     export_AngleCosineDelta();
     export_AngleBaseStacking();
     export_FixBasePair3SPN2();
+    export_FixCrossStack3SPN2();
     export_BasePairs();
+    export_CrossStacks();
 
     export_FixImproperHarmonic();
     export_Impropers();

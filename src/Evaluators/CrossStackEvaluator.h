@@ -27,8 +27,6 @@ public:
         //printf("c12Magsd %f\t%f\n", c12Mags[0], c12Mags[1]);
         //printf("range and alpha %f\t%f\n", range, alpha);
         
-        float ftor = 0.5f * sinf(dPhi);
-
         //Store the "cone of interaction" values
         float invRange  = 1.0f/range;
         float cone = M_PI * invRange;
@@ -41,7 +39,7 @@ public:
             if ((dTheta1 >= -(coneHalf)) && (dTheta1 <= coneHalf)) {
 
                 //Evaluate the Morse potentials
-                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma);
+                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
 
                 //Only applied to sites b and e
                 forces[4] -= forceMors * directors[3];
@@ -56,8 +54,8 @@ public:
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
 
                 //Evaluate the morse potential and force
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma);
+                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma1);
+                forceMors = morsAttrForc(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma1);
 
                 //Site a forces
                 float3 fr1;
@@ -85,15 +83,15 @@ public:
             //More angle parameters for theta3
             float cosine2 = cosf(range*dTheta3);
             float sine2 = sinf(range*dTheta3);
-            float basepair_term = 1.0f - cosine * cosine;
+            float basepair_term = 1.0f - cosine2 * cosine2;
             float prefactor = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[0] * c12Mags[0]);
     
             //Full potential for theta1 and modulated theta3
             if ((dTheta1 >= -coneHalf) && (dTheta1 <= coneHalf)) {
 
                 //Calculate Morse potential and forces again
-                energyMors = morsAttrEnrgy(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma);
+                energyMors = morsAttrEnrgy(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
 
                 //Site a forces
                 float3 fr;
@@ -124,8 +122,8 @@ public:
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f / sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
 
                 //More evaluations of the Morse potential
-                energyMors = morsAttrEnrgy(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma);A
+                energyMors = morsAttrEnrgy(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
 
                 //Site a
                 float3 fr;
@@ -163,7 +161,7 @@ public:
             if ((dTheta2 >= -(coneHalf)) && (dTheta2 <= coneHalf)) {
 
                 //Evaluate the Morse potentials
-                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
+                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
 
                 //Only applied to sites d and f
                 forces[5] -= forceMors * directors[4];
@@ -178,8 +176,8 @@ public:
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[2] * c12Mags[2]);
 
                 //Evaluate the morse potential and force
-                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
+                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
 
                 //Site c forces
                 float3 fr1;
@@ -207,15 +205,15 @@ public:
             //More angle parameters for theta3
             float cosine2 = cosf(range*dTheta3);
             float sine2 = sinf(range*dTheta3);
-            float basepair_term = 1.0f - cosine * cosine;
+            float basepair_term = 1.0f - cosine2 * cosine2;
             float prefactor = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[0] * c12Mags[0]);
     
             //Full potential for theta1 and modulated theta3
             if ((dTheta2 >= -coneHalf) && (dTheta2 <= coneHalf)) {
 
                 //Calculate Morse potential and forces again
-                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
+                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
 
                 //Site a forces
                 float3 fr;
@@ -246,8 +244,8 @@ public:
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f / sqrtf(1.0f - c12Mags[2] * c12Mags[2]);
 
                 //More evaluations of the Morse potential
-                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma);
+                energyMors = morsAttrEnrgy(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                forceMors = morsAttrForc(invLenSqrs[4], alpha, crossstackType.epsi, crossstackType.sigma2);
 
                 //Site a
                 float3 fr;

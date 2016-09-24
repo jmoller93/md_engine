@@ -28,8 +28,8 @@ public:
     void singlePointEng(float *);
     bool prepareForRun();
 
-    void createCrossStack(Atom *, Atom *, Atom *, Atom *, Atom *, Atom *, double, double, double, double, double,  int);
-    void setCrossStackTypeCoefs(int, double, double, double, double, double);
+    void createCrossStack(Atom *, Atom *, Atom *, Atom *, Atom *, Atom *, double, double, double, double, double, double,  int);
+    void setCrossStackTypeCoefs(int, double, double, double, double, double, double);
 
     bool readFromRestart();
 

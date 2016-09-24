@@ -20,7 +20,11 @@ class CrossStack{
 
 class CrossStack3SPN2Type {
     public:
-        float sigma;
+        //Sigma for the first cross stack interaction
+        float sigma1;
+        //Sigma for the second one
+        float sigma2;
+        //Energy scale
         float epsi;
         //Theta for 1st cross stack interaction
         float theta1;
@@ -36,8 +40,8 @@ class CrossStack3SPN2Type {
 
 class CrossStack3SPN2 : public CrossStack, public CrossStack3SPN2Type {
     public: 
-        CrossStack3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, Atom *f, double sigma_, double epsi_, double theta1_, double theta2_, double theta3_, int type_);
-        CrossStack3SPN2(double sigma_, double epsi_, double theta1_, double theta2_, double theta3_, int type_);
+        CrossStack3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, Atom *e, Atom *f, double sigma1_, double sigma2_, double epsi_, double theta1_, double theta2_, double theta3_, int type_);
+        CrossStack3SPN2(double sigma1_, double sigma2_, double epsi_, double theta1_, double theta2_, double theta3_, int type_);
         CrossStack3SPN2(){};
 	std::string getInfoString();
 };
@@ -55,7 +59,8 @@ namespace std {
     template<> struct hash<CrossStack3SPN2Type> {
         size_t operator() (CrossStack3SPN2Type const& bp) const {
             size_t seed = 0;
-            boost::hash_combine(seed, bp.sigma);
+            boost::hash_combine(seed, bp.sigma1);
+            boost::hash_combine(seed, bp.sigma2);
             boost::hash_combine(seed, bp.epsi);
             boost::hash_combine(seed, bp.theta1); 
             boost::hash_combine(seed, bp.theta2); 
