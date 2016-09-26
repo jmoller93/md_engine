@@ -18,7 +18,7 @@ state.shoutEvery = 1000
 state.dt = 0.0200
 
 #Working directory name (really it's the input directory name, but I'm consistent with Gordo's scripts)
-wdir = 'input_conf_0'
+wdir = 'input_conf_10'
 
 #Define arrays for radii and species names
 sigma = []
@@ -57,16 +57,24 @@ for i in range(len(spcs)):
 
 state.activateFix(nonbond)
 
+#The fake electric charges for now
+electric = FixLJCut(state, 'feaux-charge')
+electric.setParameter('rCut', spcs[0], spcs[0], 50.0)
+electric.setParameter('sig', spcs[0], spcs[0], 5)
+electric.setParameter('eps', spcs[0], spcs[0], 0.6)
+
+#state.activateFix(electric)
+
 #Remember the base pair identity of the particle if it is a base pair for
 #later interactions
 siteId = []
 
 #Read the input configuration
-f = open('%s/in00_conf_eq.xml' % wdir).readlines()
+f = open('%s/in00_conf.xml' % wdir).readlines()
 for line in f:
     bits = line.split()
     siteId.append(str(bits[0]))
-    state.addAtom(str(bits[0]), Vector(float(bits[1])*10.0, float(bits[2])*10.0, float(bits[3])*10.0))
+    state.addAtom(str(bits[0]), Vector(float(bits[1]), float(bits[2]), float(bits[3])))
 
 #Read the bond information
 f = open('%s/in00_bond.xml' % wdir).readlines()
@@ -201,7 +209,7 @@ def cross_stack_1(atom2, atom5, siteId):
         elif siteId[atom5] == 'T':
             theta1 = 155.05
             sigma = 7.210
-            epsi = 2.139
+            eps = 2.139
             return [theta3 * math.pi / 180.0, theta1 * math.pi /180.0, sigma, eps]
         elif siteId[atom5] == 'G':
             theta1 = 147.54
@@ -385,19 +393,19 @@ for line in f:
 state.activateFix(bstack)
 
 ##Read and generate the cross stacking interactions
+cstack = FixCrossStack3SPN2(state, 'cross-stack')
+cstack.setParameters(4.000,8.000)
 f = open('%s/in00_cross_stack.xml' % wdir).readlines()
 for line in f:
     stackInfo = line.split()
-    cstack = FixCrossStack3SPN2(state, 'cross-stack')
     crossStack1 = cross_stack_1(int(stackInfo[1]), int(stackInfo[4]), siteId)
     crossStack2 = cross_stack_2(int(stackInfo[3]), int(stackInfo[5]), siteId)
     cstack.createCrossStack(state.atoms[int(stackInfo[0])], state.atoms[int(stackInfo[1])], state.atoms[int(stackInfo[2])], state.atoms[int(stackInfo[3])], state.atoms[int(stackInfo[4])], state.atoms[int(stackInfo[4])], crossStack1[2], crossStack2[1], crossStack1[3], crossStack1[1], crossStack2[0], crossStack1[0])
 
 state.activateFix(cstack)
 
-InitializeAtoms.initTemp(state, 'all', 0.400)
-
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
+InitializeAtoms.initTemp(state, 'all', 0.400)
 fixNVT = FixLangevin(state, 'temp', 'all', 0.400)
 
 state.activateFix(fixNVT)
@@ -410,11 +418,11 @@ tempData = state.dataManager.recordTemperature('all', 50)
 engData = state.dataManager.recordEnergy('all', 50)
 
 integRelax = IntegratorRelax(state)
-integRelax.run(100000, 1e-4)
+integRelax.run(10000, 1e-4)
 integVerlet = IntegratorVerlet(state)
 writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-integVerlet.run(10000)
+integVerlet.run(100000)
 #state.dt = 0.0200
 #integVerlet.run(1000)
 
