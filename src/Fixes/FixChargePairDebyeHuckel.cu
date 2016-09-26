@@ -61,7 +61,7 @@ __global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, ui
 
 }
 FixChargePairDH::FixChargePairDH(SHARED(State) state_, string handle_, string groupHandle_) : FixCharge(state_, handle_, groupHandle_, chargePairDHType, true) {
-   setParameters(300,0.150);
+   setParameters(temp, ionic);
 };
 
 void FixChargePairDH::setParameters(float temp_, float ionic_)

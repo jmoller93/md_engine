@@ -46,7 +46,7 @@ void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_basepair<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, alpha, range, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_basepair<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
