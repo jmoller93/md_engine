@@ -72,7 +72,7 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
         float invMagProds[3]; //Product of inverse magnitudes
 
         //Angle 0 (b-a = d-c angle) theta3
-        //We are using this as angle 0 because it is the same as the lammps notations
+        //We are using this as angle 0 because it is the same as the lammps notation
         //In other words, blame Dan Hinckley
         float dotProd = dot(directors[0], directors[2]); 
         invMagProds[0] = invLens[0] * invLens[2];

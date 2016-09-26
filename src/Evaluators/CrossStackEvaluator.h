@@ -54,23 +54,21 @@ public:
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
 
                 //Evaluate the morse potential and force
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma1);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, crossstackType.epsi, crossstackType.sigma1);
+                energyMors = morsAttrEnrgy(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                forceMors = morsAttrForc(invLenSqrs[3], alpha, crossstackType.epsi, crossstackType.sigma1);
 
                 //Site a forces
-                float3 fr1;
-                fr1 = prefactor2 * (invLens[0] * (c12Mags[1] * directors[0] * invLens[0] - directors[3] * invLens[3])) * energyMors;
-                forces[0] += fr1;
+                float3 fr;
+                fr = prefactor2 * (invLens[0] * (c12Mags[1] * directors[0] * invLens[0] - directors[3] * invLens[3])) * energyMors;
+                forces[0] += fr;
 
-                //Site b forces
-                float3 fr2;
-                fr2 = prefactor2 * (invLens[0] * (directors[3] * invLens[3] - directors[0] * invLens[0] * c12Mags[1]) + invLens[3] * (directors[0] * invLens[0] - c12Mags[1] * directors[3] * invLens[3] )) * energyMors + cross_term * directors[3] * forceMors; 
-                forces[1] += fr2;
+                //Site b forces;
+                fr = prefactor2 * (invLens[0] * (directors[3] * invLens[3] - directors[0] * invLens[0] * c12Mags[1]) + invLens[3] * (directors[0] * invLens[0] - c12Mags[1] * directors[3] * invLens[3] )) * energyMors + cross_term * directors[3] * forceMors; 
+                forces[1] += fr;
 
                 //Site e forces
-                float3 fr3;
-                fr3 = prefactor2 * (invLens[3] * (directors[3] * invLens[3] * c12Mags[1] - directors[0] * invLens[0])) * energyMors - cross_term * directors[3] * forceMors; 
-                forces[4] += fr3;
+                fr = prefactor2 * (invLens[3] * (directors[3] * invLens[3] * c12Mags[1] - directors[0] * invLens[0])) * energyMors - cross_term * directors[3] * forceMors; 
+                forces[4] += fr;
             }
             else {
                 //Nothing else happens here. I've cheated you. I've cheated ALL of you
@@ -95,7 +93,7 @@ public:
 
                 //Site a forces
                 float3 fr;
-                fr = prefactor * (invLens[0] * (c12Mags[0] * directors[0] * invLens[0] - directors[2] * invLens[2])) * energyMors;
+                fr = prefactor * invLens[0] * (c12Mags[0] * directors[0] * invLens[0] - directors[2] * invLens[2]) * energyMors;
                 forces[0] += fr;
 
                 //Site b forces
@@ -217,7 +215,7 @@ public:
 
                 //Site a forces
                 float3 fr;
-                fr = prefactor * (invLens[0] * (c12Mags[0] * directors[0] * invLens[0] - directors[2] * invLens[2])) * energyMors;
+                fr = prefactor * invLens[0] * (c12Mags[0] * directors[0] * invLens[0] - directors[2] * invLens[2]) * energyMors;
                 forces[0] += fr;
 
                 //Site b forces
