@@ -178,6 +178,35 @@ class FixBond : public Fix, public TypedItemHolder {
         }
 
 
+        void setSharedMemForParams() {
+            int size = parameters.size() * sizeof(BONDTYPEHOLDER);
+            if (size + maxBondsPerBlock * sizeof(GPUMember) > state->devManager.prop.sharedMemPerBlock) {
+                usingSharedMemForParams = false;
+                sharedMemSizeForParams = 0;
+            } else {
+                usingSharedMemForParams = true;
+                sharedMemSizeForParams = size;
+            }
+
+        }
+        void deleteAtom(Atom *a) {
+            int deleteId = a->id;
+            for (int i=bonds.size()-1; i>=0; i--) {
+                CPUMember &forcer= boost::get<CPUMember>(bonds[i]);
+                bool deleteForcer = false;
+                for (int id : forcer.ids) {
+                    if (id == deleteId) {
+                        deleteForcer = true;
+                        break;
+                    }
+                }
+                if (deleteForcer) {
+                    bonds.erase(bonds.begin()+i, bonds.begin()+i+1);
+                    pyListInterface.removeMember(i);
+                    pyListInterface.requestRefreshPyList();
+                }
+            }
+        }
 };
 
 #endif
