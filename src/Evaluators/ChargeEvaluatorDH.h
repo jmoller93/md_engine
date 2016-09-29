@@ -12,7 +12,8 @@ class ChargeEvaluatorDH {
             float r2inv = 1.0f/lenSqr;
             float rinv = sqrtf(r2inv);
             float len = sqrtf(lenSqr);
-            float forceScalar = qi*qj*epsi*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
+            float forceScalar = qi*qj*epsi*expf(-len*lambdai)*(r2inv*(rinv+lambdai)) * multiplier;
+            printf("Force is %f\n",  forceScalar);
             return dr * forceScalar;
         }
         inline __device__ float energy(float lenSqr, float qi, float qj, float multiplier) {

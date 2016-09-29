@@ -49,7 +49,7 @@ __global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, ui
             float qj = qs[otherIdx];
 
             float rinv = 1.0f/len;
-            float forceScalar = qi*qj*epsi*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
+            float forceScalar = qi*qj*epsi*rinv*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
     
             float3 forceVec = dr * forceScalar;
             forceSum += forceVec;
@@ -68,16 +68,25 @@ void FixChargePairDH::setParameters(float temp_, float ionic_)
 {
     temp = temp_;
     ionic = ionic_;
+    
+    //Charge of an electron
     double ec = 1.60217653E-19;
     double temp_eps0 = 8.8541878176E-22;
+    
+    //Calculate the epsilon parameter as a function of temperature and ionic strength
     double temp_eps = ((249.4 - 0.788 * temp + 7.20E-4 * temp * temp) * 
                      (1.000 - 2.551 * ionic + 5.151E-2 * ionic * ionic -
                       6.889E-3 * ionic * ionic * ionic) * temp_eps0
                      )
                     ;
-    double lambda = sqrt(temp_eps * 1.3806505E-23 * 300.0 * 1.0E30 / (2.0 * 6.0221415E23 * ec * ec * ionic)); 
+
+    //Calculate the debye length from the given temperature and ionic strength calculations
+    double lambda = sqrt(temp_eps * 1.3806505E-23 * temp * 1.0E30 / (2.0f * 6.0221415E23 * ec * ec * ionic)); 
+    //We store the inverse as that is the only form that is used by the Evaluator
     lambdai = 1.0 / lambda;
-    epsi = 1.0 / (4.0 * M_PI * temp_eps);  
+    //Convert epsilon to kcal/mol from kJ
+    epsi = 1.0 / (4.0 * M_PI * temp_eps * 1.44E20);  
+    printf("Epsi is %f, debye length is %f\n", epsi, lambdai);
 }
 
 void FixChargePairDH::compute(bool computeVirials) {
