@@ -19,6 +19,7 @@ using namespace std;
 #include "includeFixes.h"
 #include "IntegratorVerlet.h"
 #include "IntegratorRelax.h"
+#include "IntegratorGradientDescent.h"
 #include "FixLangevin.h"
 #include "boost_stls.h"
 #include "PythonOperation.h"
@@ -43,6 +44,7 @@ BOOST_PYTHON_MODULE(Sim) {
     export_Integrator();
     export_IntegratorVerlet();
     export_IntegratorRelax();
+    export_IntegratorGradientDescent();
     export_TypedItemHolder();
     export_Fix();
     export_FixBondHarmonic();
