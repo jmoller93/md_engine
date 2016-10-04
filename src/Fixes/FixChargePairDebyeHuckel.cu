@@ -62,6 +62,7 @@ __global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, ui
 }
 FixChargePairDH::FixChargePairDH(SHARED(State) state_, string handle_, string groupHandle_) : FixCharge(state_, handle_, groupHandle_, chargePairDHType, true) {
    setParameters(temp, ionic);
+   canOffloadChargePairCalc = true;
 };
 
 void FixChargePairDH::setParameters(float temp_, float ionic_)
@@ -76,16 +77,16 @@ void FixChargePairDH::setParameters(float temp_, float ionic_)
     //Calculate the epsilon parameter as a function of temperature and ionic strength
     double temp_eps = ((249.4 - 0.788 * temp + 7.20E-4 * temp * temp) * 
                      (1.000 - 2.551 * ionic + 5.151E-2 * ionic * ionic -
-                      6.889E-3 * ionic * ionic * ionic) * temp_eps0
+                      6.889E-3 * ionic * ionic * ionic)
                      )
                     ;
 
     //Calculate the debye length from the given temperature and ionic strength calculations
-    double lambda = sqrt(temp_eps * 1.3806505E-23 * temp * 1.0E30 / (2.0f * 6.0221415E23 * ec * ec * ionic)); 
+    double lambda = sqrt(temp_eps * temp_eps0 * 1.3806505E-23 * temp * 1.0E30 / (2.0f * 6.0221415E23 * ec * ec * ionic * 1000)); 
     //We store the inverse as that is the only form that is used by the Evaluator
     lambdai = 1.0 / lambda;
     //Convert epsilon to kcal/mol from kJ
-    epsi = 1.0 / (4.0 * M_PI * temp_eps * 1.44E20);  
+    epsi = 1.0 / (temp_eps);  
     printf("Epsi is %f, debye length is %f\n", epsi, lambdai);
 }
 
@@ -102,6 +103,11 @@ void FixChargePairDH::compute(bool computeVirials) {
 
 }
 
+
+std::vector<float> FixChargePairDH::getRCuts() {
+    std::vector<float> vals(1, state->rCut);
+    return vals;
+}
 
 void export_FixChargePairDH() {
     py::class_<FixChargePairDH, SHARED(FixChargePairDH), boost::python::bases<FixCharge> > (

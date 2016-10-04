@@ -32,6 +32,7 @@ public:
     ChargeEvaluatorDH generateEvaluator() {
         return ChargeEvaluatorDH(lambdai, epsi);
     }
+    std::vector<float> getRCuts();
 
 };
 
