@@ -337,11 +337,11 @@ __global__ void virials_cu(BoundsGPU bounds,int3 sz,Virial *dest,float alpha, fl
           
           Virial virialstmp = Virial(0, 0, 0, 0, 0, 0);   
           virialstmp[0]=(1.0+differential*k.x*k.x)*E; //xx
-          virialstmp[2]=(1.0+differential*k.y*k.y)*E; //yy
-          virialstmp[5]=(1.0+differential*k.z*k.z)*E; //zz
-          virialstmp[1]=(differential*k.x*k.y)*E; //xy
-          virialstmp[3]=(differential*k.x*k.z)*E; //xz
-          virialstmp[4]=(differential*k.x*k.z)*E; //yz
+          virialstmp[1]=(1.0+differential*k.y*k.y)*E; //yy
+          virialstmp[2]=(1.0+differential*k.z*k.z)*E; //zz
+          virialstmp[3]=(differential*k.x*k.y)*E; //xy
+          virialstmp[4]=(differential*k.x*k.z)*E; //xz
+          virialstmp[5]=(differential*k.y*k.z)*E; //yz
 
 //           virials[id.x*sz.y*sz.z+id.y*sz.z+id.z]=virialstmp;
 //           __syncthreads();
@@ -524,7 +524,7 @@ __global__ void compute_short_range_energies_cu(int nAtoms, float4 *xs, uint16_t
 
 __global__ void mapVirialToSingleAtom(Virial *atomVirials, Virial *fieldVirial, float volume) {
     //just mapping to one atom for now.  If we're looking at per-atom properties, should change to mapping to all atoms evenly
-    atomVirials[0][threadIdx.x] += fieldVirial[0][threadIdx.x] / volume;
+    atomVirials[0][threadIdx.x] += 0.5 * fieldVirial[0][threadIdx.x] / volume;
 }
 
 
@@ -763,18 +763,25 @@ bool FixChargeEwald::prepareForRun() {
     virialField = GPUArrayDeviceGlobal<Virial>(1);
     setTotalQ2();
     if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
-        handleChangedBounds(true);
+        handleBoundsChangeInternal(true);
     }
     return true;
 }
 
-void FixChargeEwald::handleChangedBounds(bool printError) {
-   // printf("DOING BOUNDS");
-    find_optimal_parameters(printError);
-    calc_Green_function();
-    boundsLastOptimize = state->boundsGPU;
-    total_Q2LastOptimize=total_Q2;
+void FixChargeEwald::handleBoundsChange() {
+    handleBoundsChangeInternal(false);
 }
+
+void FixChargeEwald::handleBoundsChangeInternal(bool printError) {
+
+    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
+        find_optimal_parameters(printError);
+        calc_Green_function();
+        boundsLastOptimize = state->boundsGPU;
+        total_Q2LastOptimize=total_Q2;
+    }
+}
+
 void FixChargeEwald::compute(bool computeVirials) {
  //   CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
@@ -784,9 +791,6 @@ void FixChargeEwald::compute(bool computeVirials) {
     GridGPU &grid = state->gridGPU;
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
-    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
-        handleChangedBounds(false);
-    }
     
  
     float Qconversion = sqrt(state->units.qqr_to_eng);
@@ -987,7 +991,7 @@ void FixChargeEwald::singlePointEng(float * perParticleEng) {
     CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
     if (state->boundsGPU != boundsLastOptimize) {
-        handleChangedBounds(false);
+        handleBoundsChange();
     }
 //     cout<<"FixChargeEwald::compute..\n";
     int nAtoms = state->atoms.size();
