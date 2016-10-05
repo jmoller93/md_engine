@@ -410,23 +410,15 @@ for line in f:
 
 state.activateFix(cstack)
 
-#Instead of relaxation let's do this
-InitializeAtoms.initTemp(state, 'all', 0)
-state.dt = 0.0001
-fixNVTRescale = FixNVTRescale(state, 'temp', 'all', 1, 1)
-state.activateFix(fixNVTRescale)
-integVerlet = IntegratorVerlet(state)
-#integVerlet.run(10000)
-#exit()
-#integVerlet.run(10000)
-#state.deactivateFix(fixNVTRescale)
+#Run the relaxation integrator
+#integRelax = IntegratorGradientDescent(state)
+#integRelax.run(10000,0.001)
 
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
 InitializeAtoms.initTemp(state, 'all', 300)
 fixNVT = FixLangevin(state, 'temp', 'all', 300)
-fixNVT.setParameters(0,3E-25)
+fixNVT.setParameters(0,0.01)
 state.activateFix(fixNVT)
-
 
 #Other things that we may want to output to make sure the simulation is running correctly
 tempData = state.dataManager.recordTemperature('all', 50)
@@ -434,18 +426,14 @@ tempData = state.dataManager.recordTemperature('all', 50)
 #boundsData = state.dataManager.recordBounds(100)
 #engData = state.dataManager.recordEnergy('all', 50)
 
-#Run the relaxation integrator
-state.dt = 0.1
-integRelax = IntegratorRelax(state)
-integRelax.run(10000, 1e-4)
-
 #Run the actual system
-state.dt = 10.0
+state.dt = 20.0
 integVerlet = IntegratorVerlet(state)
-writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
+writeconfig = WriteConfig(state, fn='test_out', writeEvery=1000, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-integVerlet.run(50000)
-#integVerlet.run(1000)
+integRelax = IntegratorGradientDescent(state)
+integRelax.run(100000,0.1)
+integVerlet.run(100000)
 
 
 
