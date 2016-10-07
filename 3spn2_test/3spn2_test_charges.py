@@ -62,7 +62,7 @@ for i in range(len(spcs)):
 
 state.activateFix(nonbond)
 
-#The fake electric charges for now
+#The Debye Huckel electrostatics
 electric = FixChargePairDH(state, 'debyeHuckel', 'all')
 electric.setParameters(300,0.150)
 state.activateFix(electric)
@@ -417,6 +417,8 @@ state.activateFix(cstack)
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
 InitializeAtoms.initTemp(state, 'all', 300)
 fixNVT = FixLangevin(state, 'temp', 'all', 300)
+
+#4.554E-5 is the gamma value, but this affects the simi greatly
 fixNVT.setParameters(0,0.01)
 state.activateFix(fixNVT)
 
@@ -432,8 +434,8 @@ integVerlet = IntegratorVerlet(state)
 writeconfig = WriteConfig(state, fn='test_out', writeEvery=1000, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
 integRelax = IntegratorGradientDescent(state)
-integRelax.run(100000,0.1)
-integVerlet.run(100000)
+integRelax.run(10000,0.1)
+integVerlet.run(10000)
 
 
 

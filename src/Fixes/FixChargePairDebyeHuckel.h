@@ -6,6 +6,7 @@
 #include "GPUArrayTex.h"
 #include "FixCharge.h"
 #include "ChargeEvaluatorDH.h"
+#include "State.h"
 
 class State;
 
@@ -30,7 +31,7 @@ public:
     void setParameters(float temp_, float ionic_);
     void compute(bool);
     ChargeEvaluatorDH generateEvaluator() {
-        return ChargeEvaluatorDH(lambdai, epsi);
+        return ChargeEvaluatorDH(lambdai, epsi, state->units.qqr_to_eng);
     }
     std::vector<float> getRCuts();
 
