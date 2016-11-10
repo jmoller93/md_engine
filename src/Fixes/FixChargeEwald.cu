@@ -12,7 +12,7 @@
 #include "helpers.h"
 // #include <cmath>
 using namespace std;
-
+namespace py = boost::python;
 const std::string chargeEwaldType = "ChargeEwald";
 
 // #define THREADS_PER_BLOCK_
@@ -104,7 +104,7 @@ __global__ void map_charge_set_to_zero_cu(int3 sz,cufftComplex *grid) {
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z))                  
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z))                  
          grid[id.x*sz.y*sz.z+id.y*sz.z+id.z]=make_cuComplex (0.0f, 0.0f);    
 }
 
@@ -123,7 +123,7 @@ __global__ void Green_function_cu(BoundsGPU bounds, int3 sz,float *Green_functio
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z)){
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z)){
           float3 h =bounds.trace()/make_float3(sz);
           
           //         2*PI
@@ -176,7 +176,7 @@ __global__ void potential_cu(int3 sz,float *Green_function,
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z)){
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z)){
         FFT_phi[id.x*sz.y*sz.z+id.y*sz.z+id.z]=FFT_qs[id.x*sz.y*sz.z+id.y*sz.z+id.z]*Green_function[id.x*sz.y*sz.z+id.y*sz.z+id.z];
 //TODO after Inverse FFT divide by volume
       }
@@ -188,7 +188,7 @@ __global__ void E_field_cu(BoundsGPU bounds, int3 sz,float *Green_function, cuff
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z)){
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z)){
           //K vector
           float3 k= 6.28318530717958647693f*make_float3(id)/bounds.trace();
           if (id.x>sz.x/2) k.x= 6.28318530717958647693f*(id.x-sz.x)/bounds.trace().x;
@@ -309,7 +309,7 @@ __global__ void Energy_cu(int3 sz,float *Green_function,
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z)){
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z)){
         cufftComplex qi=FFT_qs[id.x*sz.y*sz.z+id.y*sz.z+id.z];
         E_grid[id.x*sz.y*sz.z+id.y*sz.z+id.z]
             =make_cuComplex((qi.x*qi.x+qi.y*qi.y)*Green_function[id.x*sz.y*sz.z+id.y*sz.z+id.z],0.0);
@@ -323,7 +323,7 @@ __global__ void virials_cu(BoundsGPU bounds,int3 sz,Virial *dest,float alpha, fl
                           blockIdx.y*blockDim.y + threadIdx.y,
                           blockIdx.z*blockDim.z + threadIdx.z);
 
-      if ((id.x<sz.x)&&(id.x<sz.y)&&(id.x<sz.z)){
+      if ((id.x<sz.x)&&(id.y<sz.y)&&(id.z<sz.z)){
           float3 k= 6.28318530717958647693f*make_float3(id)/bounds.trace();
           if (id.x>sz.x/2) k.x= 6.28318530717958647693f*(id.x-sz.x)/bounds.trace().x;
           if (id.y>sz.y/2) k.y= 6.28318530717958647693f*(id.y-sz.y)/bounds.trace().y;
@@ -337,11 +337,11 @@ __global__ void virials_cu(BoundsGPU bounds,int3 sz,Virial *dest,float alpha, fl
           
           Virial virialstmp = Virial(0, 0, 0, 0, 0, 0);   
           virialstmp[0]=(1.0+differential*k.x*k.x)*E; //xx
-          virialstmp[2]=(1.0+differential*k.y*k.y)*E; //yy
-          virialstmp[5]=(1.0+differential*k.z*k.z)*E; //zz
-          virialstmp[1]=(differential*k.x*k.y)*E; //xy
-          virialstmp[3]=(differential*k.x*k.z)*E; //xz
-          virialstmp[4]=(differential*k.x*k.z)*E; //yz
+          virialstmp[1]=(1.0+differential*k.y*k.y)*E; //yy
+          virialstmp[2]=(1.0+differential*k.z*k.z)*E; //zz
+          virialstmp[3]=(differential*k.x*k.y)*E; //xy
+          virialstmp[4]=(differential*k.x*k.z)*E; //xz
+          virialstmp[5]=(differential*k.y*k.z)*E; //yz
 
 //           virials[id.x*sz.y*sz.z+id.y*sz.z+id.z]=virialstmp;
 //           __syncthreads();
@@ -421,7 +421,7 @@ template < bool COMPUTE_VIRIALS>
 __global__ void compute_short_range_forces_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float alpha, float rCut, BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr, float onefourStr, Virial *__restrict__ virials, Virial *virialField, float volume,float  conversion) {
 
     float multipliers[4] = {1, onetwoStr, onethreeStr, onefourStr};
-
+ //   printf("USING SHORT RANGE FORCES IN VIRIAL.  THIS KERNEL IS INCORRECT\n");
     Virial virialsSum = Virial(0, 0, 0, 0, 0, 0);   
     int idx = GETIDX();
     if (idx < nAtoms) {
@@ -524,7 +524,7 @@ __global__ void compute_short_range_energies_cu(int nAtoms, float4 *xs, uint16_t
 
 __global__ void mapVirialToSingleAtom(Virial *atomVirials, Virial *fieldVirial, float volume) {
     //just mapping to one atom for now.  If we're looking at per-atom properties, should change to mapping to all atoms evenly
-    atomVirials[0][threadIdx.x] += fieldVirial[0][threadIdx.x] / volume;
+    atomVirials[0][threadIdx.x] += 0.5 * fieldVirial[0][threadIdx.x] / volume;
 }
 
 
@@ -539,6 +539,9 @@ FixChargeEwald::FixChargeEwald(SHARED(State) state_, string handle_, string grou
   cufftCreate(&plan);
   canOffloadChargePairCalc = true;
   calcLongRange = true;
+  modeIsError = false;
+  sz = make_int3(32, 32, 32);
+  malloced = false;
 }
 
 
@@ -616,7 +619,7 @@ void FixChargeEwald::setTotalQ2() {
     cout<<"total_Q "<<total_Q<<'\n';
     cout<<"total_Q2 "<<total_Q2<<'\n';
 }
-void FixChargeEwald::find_optimal_parameters(bool printError){
+double FixChargeEwald::find_optimal_parameters(bool printError){
 
     int nAtoms = state->atoms.size();    
     L=state->boundsGPU.trace();
@@ -654,10 +657,13 @@ void FixChargeEwald::find_optimal_parameters(bool printError){
     if (n_iter==max_iter) cout<<"Ewald RMS Root finder failed, max_iter "<<max_iter<<" reached\n";
     alpha=x_b;
     //alpha = 1.0;
+    double error = DeltaF_k(alpha)+DeltaF_real(alpha);
     if (printError) {
+
         cout<<"Ewald alpha="<<alpha<<'\n';
-        cout<<"Ewald RMS error is  "<<DeltaF_k(alpha)+DeltaF_real(alpha)<<'\n';
+        cout<<"Ewald RMS error is  "<<error<<'\n';
     }
+    return error;
     
     
 }
@@ -695,9 +701,69 @@ void FixChargeEwald::setParameters(int szx_,int szy_,int szz_,float rcut_,int in
 
     interpolation_order=interpolation_order_;
 
+    malloced = true;
 
 }
 
+
+void FixChargeEwald::setGridToErrorTolerance(bool printMsg) {
+    int3 szOld = sz;
+    int nTries = 0;
+    double error = find_optimal_parameters(false);
+    Vector trace = state->bounds.rectComponents;
+    while (nTries < 100 and (error > errorTolerance or error!=error or error < 0)) { //<0 tests for -inf
+        Vector sVec = Vector(make_float3(sz));
+        Vector ratio = sVec / trace;
+        double minRatio = ratio[0];
+        int minIdx = 0;
+        for (int i=0; i<3; i++) {
+            if (ratio[i] < minRatio) {
+                minRatio = ratio[i];
+                minIdx = i;
+            }
+        }
+        sVec[minIdx] *= 2;
+        //sz *= 2;//make_int3(sVec.asFloat3());
+        sz = make_int3(sVec.asFloat3());
+        error = find_optimal_parameters(false);
+        nTries++;
+    }
+    //DOESN'T REDUCE GRID SIZE EVER
+    if (printMsg) {
+        printf("Using ewald grid of %d %d %d with error %f\n", sz.x, sz.y, sz.z, error);
+    }
+
+    if (!malloced or szOld != sz) {
+        if (malloced) {
+            cufftDestroy(plan);
+            cudaFree(FFT_Qs);
+            cudaFree(FFT_Ex);
+            cudaFree(FFT_Ey);
+            cudaFree(FFT_Ez);
+        }
+        cudaMalloc((void**)&FFT_Qs, sizeof(cufftComplex)*sz.x*sz.y*sz.z);
+
+        cufftPlan3d(&plan, sz.x,sz.y, sz.z, CUFFT_C2C);
+
+
+        cudaMalloc((void**)&FFT_Ex, sizeof(cufftComplex)*sz.x*sz.y*sz.z);
+        cudaMalloc((void**)&FFT_Ey, sizeof(cufftComplex)*sz.x*sz.y*sz.z);
+        cudaMalloc((void**)&FFT_Ez, sizeof(cufftComplex)*sz.x*sz.y*sz.z);
+
+        Green_function=GPUArrayGlobal<float>(sz.x*sz.y*sz.z);
+        malloced = true;
+    }
+
+
+}
+void FixChargeEwald::setError(double targetError, float rcut_, int interpolation_order_) {
+    printf("HEY HERE\n");
+    r_cut=rcut_;
+    interpolation_order=interpolation_order_;
+    errorTolerance = targetError;
+    modeIsError = true;
+
+}
 
 void FixChargeEwald::calc_Green_function(){
 
@@ -763,18 +829,29 @@ bool FixChargeEwald::prepareForRun() {
     virialField = GPUArrayDeviceGlobal<Virial>(1);
     setTotalQ2();
     if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
-        handleChangedBounds(true);
+        handleBoundsChangeInternal(true);
     }
     return true;
 }
 
-void FixChargeEwald::handleChangedBounds(bool printError) {
-   // printf("DOING BOUNDS");
-    find_optimal_parameters(printError);
-    calc_Green_function();
-    boundsLastOptimize = state->boundsGPU;
-    total_Q2LastOptimize=total_Q2;
+void FixChargeEwald::handleBoundsChange() {
+    handleBoundsChangeInternal(false);
 }
+
+void FixChargeEwald::handleBoundsChangeInternal(bool printError) {
+
+    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
+        if (modeIsError) {
+            setGridToErrorTolerance(printError);
+        } else {
+            find_optimal_parameters(printError);
+        }
+        calc_Green_function();
+        boundsLastOptimize = state->boundsGPU;
+        total_Q2LastOptimize=total_Q2;
+    }
+}
+
 void FixChargeEwald::compute(bool computeVirials) {
  //   CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
@@ -784,9 +861,6 @@ void FixChargeEwald::compute(bool computeVirials) {
     GridGPU &grid = state->gridGPU;
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
-    if ((state->boundsGPU != boundsLastOptimize)||(total_Q2!=total_Q2LastOptimize)) {
-        handleChangedBounds(false);
-    }
     
  
     float Qconversion = sqrt(state->units.qqr_to_eng);
@@ -987,7 +1061,7 @@ void FixChargeEwald::singlePointEng(float * perParticleEng) {
     CUT_CHECK_ERROR("before FixChargeEwald kernel execution failed");
 
     if (state->boundsGPU != boundsLastOptimize) {
-        handleChangedBounds(false);
+        handleBoundsChange();
     }
 //     cout<<"FixChargeEwald::compute..\n";
     int nAtoms = state->atoms.size();
@@ -1099,21 +1173,22 @@ ChargeEvaluatorEwald FixChargeEwald::generateEvaluator() {
 void (FixChargeEwald::*setParameters_xyz)(int ,int ,int ,float ,int) = &FixChargeEwald::setParameters;
 void (FixChargeEwald::*setParameters_xxx)(int ,float ,int) = &FixChargeEwald::setParameters;
 void export_FixChargeEwald() {
-    boost::python::class_<FixChargeEwald,
+    py::class_<FixChargeEwald,
                           SHARED(FixChargeEwald),
-                          boost::python::bases<FixCharge> > (
+                          py::bases<FixCharge> > (
          "FixChargeEwald", 
-         boost::python::init<SHARED(State), string, string> (
-              boost::python::args("state", "handle", "groupHandle"))
+         py::init<SHARED(State), string, string> (
+              py::args("state", "handle", "groupHandle"))
         )
         .def("setParameters", setParameters_xyz,
-                (boost::python::arg("szx"),boost::python::arg("szy"),boost::python::arg("szz"), boost::python::arg("r_cut"),boost::python::arg("interpolation_order"))
+                (py::arg("szx"),py::arg("szy"),py::arg("szz"), py::arg("r_cut"),py::arg("interpolation_order"))
           
             )
         .def("setParameters", setParameters_xxx,
-                (boost::python::arg("sz"),boost::python::arg("r_cut"),boost::python::arg("interpolation_order"))
+                (py::arg("sz"),py::arg("r_cut"),py::arg("interpolation_order"))
             )        
-        .def_readwrite("calcLongRange", &FixChargeEwald::calcLongRange)
+        .def("setError", &FixChargeEwald::setError, (py::arg("error"), py::arg("rCut"), py::arg("interpolation_order"))
+            )
         ;
 }
 

@@ -124,7 +124,7 @@ void InitializeAtoms::initTemp(SHARED(State) state, string groupHandle,
     if (atoms.size()>1) {
         sumMoms /= sumMass;
         for (Atom *a : atoms) {
-            a->vel -= sumMoms * a->mass;
+            a->vel -= sumMoms;
         }
     }
     double sumKe = 0;
