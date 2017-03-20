@@ -22,6 +22,7 @@ public:
     void singlePointEng(float *);
 
     void createDihedral(Atom *, Atom *, Atom *, Atom *, double, double, double, int type_);
+    void createBond(Atom *, Atom *, double, double, int);  // by ids
     void setDihedralTypeCoefs(int, double, double, double);
 
     //std::vector<pair<int, std::vector<int> > > neighborlistExclusions();

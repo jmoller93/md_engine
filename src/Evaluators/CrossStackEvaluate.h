@@ -85,12 +85,12 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
 
         //Angle 2 (c-d-f cstck 2 angle) theta2
         dotProd = dot(directors[2], directors[4]);
-        invMagProds[1] = invLens[2] * invLens[4];
+        invMagProds[2] = invLens[2] * invLens[4];
         c12Mags[2] = dotProd * invMagProds[2]; 
 
         //Make sure the angles are periodic and evaluate
         float thetas[3];
-        for (int i =0; i<2; i++) {
+        for (int i =0; i<3; i++) {
             if (c12Mags[i] > 1.0f) {
                 c12Mags[i] = 1.0f;
             } else if (c12Mags[i] < -1.0f) {
@@ -100,9 +100,9 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
         }
 
         //The forces and initialization
-        float3 allForces[4];
+        float3 allForces[6];
 
-        for(int i=0; i<4; i++) {
+        for(int i=0; i<6; i++) {
             allForces[i] = 0.0f * allForces[i];
         }
 
@@ -110,7 +110,7 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
         evaluator.forces(crossstackType, thetas, invMagProds, invLens, invLenSqrs, c12Mags, directors, allForces);
 
         //The atomic adds make bonded interactions run quicker
-        for (int i=0; i<4; i++) {
+        for (int i=0; i<6; i++) {
             atomicAdd(&(fs[idxs[i]].x), (allForces[i].x));
             atomicAdd(&(fs[idxs[i]].y), (allForces[i].y));
             atomicAdd(&(fs[idxs[i]].z), (allForces[i].z));

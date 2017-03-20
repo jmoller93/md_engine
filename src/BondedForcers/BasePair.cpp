@@ -1,4 +1,5 @@
 #include "BasePair.h"
+#include <boost/python.hpp>
 #include "boost_for_export.h"
 #include "array_indexing_suite.hpp"
 namespace py = boost::python;

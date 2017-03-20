@@ -86,7 +86,7 @@ bool FixLJRepul::prepareForRun() {
         return 24*a;
     };
     auto processSig = [] (float a) {
-        return pow(a, 6);
+        return pow(a, 2);
     };
     auto processRCut = [] (float a) {
         return a*a;

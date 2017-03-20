@@ -2,6 +2,8 @@
 #ifndef FIXBASEPAIR_H
 #define FIXBASEPAIR_H
 
+#include <boost/python.hpp>
+
 #include "FixPotentialMultiAtom.h"
 #include "BasePair.h"
 #include "BasePairEvaluator.h"
@@ -20,6 +22,7 @@ protected:
 public:
     //DataSet *eng;
     //DataSet *press;
+    std::vector<BondVariant> bonds;
 
     FixBasePair3SPN2(boost::shared_ptr<State> state_, std::string handle);
 
@@ -32,6 +35,10 @@ public:
     void setBasePairTypeCoefs(int, double, double, double, double, double);
 
     bool readFromRestart();
+
+    virtual std::vector<BondVariant> *getBonds() {
+        return &bonds;
+    }
 
 };
 

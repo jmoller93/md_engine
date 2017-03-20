@@ -27,6 +27,7 @@ __global__ void compute_cu(int nAtoms, float4 *vs, float4 *fs, curandState_t *ra
         if (!useMass) {
             invMass = 1.0f;
         }
+        //printf("%f\n",gamma);
         float dragFactor = gamma / (invMass * ftm_to_v);
         float kickFactor = sqrtf((24.0f * boltz * gamma * T ) / (invMass * dt * mvv_to_e)) / ftm_to_v;
 
@@ -84,7 +85,7 @@ bool FixLangevin::postRun() {
     return true;
 }
 
-void FixLangevin::setParams(double seed_, double gamma_) {
+void FixLangevin::setParams(int seed_, float gamma_) {
     if (seed_ != INVALID_VAL) {
         seed = seed_;
     }

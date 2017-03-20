@@ -17,6 +17,7 @@ private:
 public:
     //DataSet *eng;
     //DataSet *press;
+    std::vector<BondVariant> bonds;
 
     FixDihedralPeriodic(boost::shared_ptr<State> state_, std::string handle);
 
@@ -29,6 +30,10 @@ public:
 
     //std::vector<pair<int, std::vector<int> > > neighborlistExclusions();
     bool readFromRestart();
+
+    virtual std::vector<BondVariant> *getBonds() {
+        return &bonds;
+    }
 
 };
 

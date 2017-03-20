@@ -106,7 +106,7 @@ public:
     bool is2d; //!< True for 2d simulations, else False
     bool periodic[3]; //!< If True, simulation is periodic in given dimension
     float dt; //!< Timestep
-    float specialNeighborCoefs[3]; //!< Coefficients for modified neighbor
+    float specialNeighborCoefs[5]; //!< Coefficients for modified neighbor
                                    //!< interactions of bonded atoms (1-2, 1-3,
                                    //!< 1-4 neighbors)
     int64_t turn; //!< Step of the simulation
@@ -142,7 +142,7 @@ public:
      * with one intermediate atom, and 1-4 neighbors are bonded with two
      * intermediate atoms.
      */
-    void setSpecialNeighborCoefs(float onetwo, float onethree, float onefour);
+    void setSpecialNeighborCoefs(float onetwo, float onethree, float onefour, float onefive, float onesix);
 
     //! Add a Fix to the simulation
     /*!

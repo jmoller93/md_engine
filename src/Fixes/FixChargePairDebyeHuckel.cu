@@ -20,9 +20,9 @@ const std::string chargePairDHType = "ChargePairDH";
 
 
 //    compute_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), gpd.qs(activeIdx), alpha, r_cut, A, shift, state->boundsGPU, state->devManager.prop.warpSize, 0.5);// state->devManager.prop.warpSize, sigmas.getDevData(), epsilons.getDevData(), numTypes, state->rCut, state->boundsGPU, oneFourStrength);
-__global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float lambdai, float epsi, float qqr_to_eng,  BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr, float onefourStr) {
+__global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float lambdai, float epsi, float qqr_to_eng,  BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr) {
 
-    float multipliers[4] = {1, onetwoStr, onethreeStr, onefourStr};
+    float multipliers[3] = {1, onetwoStr, onethreeStr};
     int idx = GETIDX();
     if (idx < nAtoms) {
         float4 posWhole = xs[idx];
@@ -30,6 +30,7 @@ __global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, ui
 
         float3 forceSum = make_float3(0, 0, 0);
         float qi = qs[idx];//tex2D<float>(qs, XIDX(idx, sizeof(float)), YIDX(idx, sizeof(float)));
+        printf("qs is %f\t qi is %f\n", qs[idx], qi);
 
         //printf("start, end %d %d\n", start, end);
         int baseIdx = baseNeighlistIdx(cumulSumMaxPerBlock, warpSize);
@@ -48,8 +49,10 @@ __global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, ui
             float len=sqrtf(lenSqr);
             float qj = qs[otherIdx];
 
+            if(fabs(qi) != fabs(qj)) {qi = qi*1.6667f;}
             float rinv = 1.0f/len;
-            float forceScalar = qi*qj*epsi*rinv*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
+            float forceScalar = qqr_to_eng*qi*qj*epsi*rinv*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
+            printf("qi %f\t qj is %f\t force is %f\t qqr is %f\n", qi,qj,forceScalar,qqr_to_eng);
     
             float3 forceVec = dr * forceScalar;
             forceSum += forceVec;
@@ -73,21 +76,20 @@ void FixChargePairDH::setParameters(float temp_, float ionic_)
     //Charge of an electron
     double ec = 1.60217653E-19;
     double temp_eps0 = 8.8541878176E-22;
+    double na = 6.0221415E23;
+    double kb = 1.3806505E-23;
     
     //Calculate the epsilon parameter as a function of temperature and ionic strength
-    double temp_eps = ((249.4 - 0.788 * temp + 7.20E-4 * temp * temp) * 
-                     (1.000 - 0.2551 * ionic + 5.151E-2 * ionic * ionic -
-                      6.889E-3 * ionic * ionic * ionic)
-                     )
-                    ;
+    double temp_eps = (249.4 - 0.788 * temp + 7.20E-4 * temp * temp);
+    temp_eps *= (1.000 - 0.2551 * ionic + 5.151E-2 * ionic * ionic - 6.889E-3 * ionic * ionic * ionic);
 
     //Calculate the debye length from the given temperature and ionic strength calculations
-    double lambda = sqrt(temp_eps * temp_eps0 * 1.3806505E-23 * temp * 1.0E30 / (2.0f * 6.0221415E23 * ec * ec * ionic)); 
+    double lambda = sqrt(temp_eps * temp_eps0 * kb * temp * 1.0E27 / (2.0f * na * ec * ec * ionic)); 
     //We store the inverse as that is the only form that is used by the Evaluator
     lambdai = 1.0 / lambda;
     //Convert epsilon to kcal/mol from kJ/mol
     epsi = 1.0 / (temp_eps);  
-    printf("Epsi is %f, debye length is %f\n", 1.0/epsi, 1.0/lambdai);
+    //printf("Epsi is %f, debye length is %f\n", 1.0/epsi, 1.0/lambdai);
 }
 
 void FixChargePairDH::compute(bool computeVirials) {
@@ -97,7 +99,7 @@ void FixChargePairDH::compute(bool computeVirials) {
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     float *neighborCoefs = state->specialNeighborCoefs;
-    compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), gpd.qs(activeIdx), lambdai, epsi, state->units.qqr_to_eng, state->boundsGPU, state->devManager.prop.warpSize, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2]);// state->devManager.prop.warpSize, sigmas.getDevData(), epsilons.getDevData(), numTypes, state->rCut, state->boundsGPU, oneFourStrength);
+    compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), gpd.qs(activeIdx), lambdai, epsi, state->units.qqr_to_eng, state->boundsGPU, state->devManager.prop.warpSize, neighborCoefs[0], neighborCoefs[1]);// state->devManager.prop.warpSize, sigmas.getDevData(), epsilons.getDevData(), numTypes, state->rCut, state->boundsGPU, oneFourStrength);
   //  compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborIdxs, grid.neighborlist.tex, gpd.qs(activeIdx), alpha,r_cut, A,shift, state->boundsGPU, 0.5);
 
 

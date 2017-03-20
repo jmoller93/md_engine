@@ -5,6 +5,7 @@
 #include <boost/python.hpp>
 #include "BoundsGPU.h"
 #include "cutils_math.h"
+#include <vector>
 class Interpolator {
 public:
     //ONE of these three groups will be used based on thermo type

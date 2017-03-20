@@ -18,7 +18,7 @@ state.shoutEvery = 1000
 state.dt = 0.0200
 
 #Working directory name (really it's the input directory name, but I'm consistent with Gordo's scripts)
-wdir = 'input_conf_10'
+wdir = 'input_conf_20'
 
 #Define arrays for radii and species names
 sigma = []
@@ -420,7 +420,7 @@ engData = state.dataManager.recordEnergy('all', 50)
 integRelax = IntegratorRelax(state)
 integRelax.run(10000, 1e-4)
 integVerlet = IntegratorVerlet(state)
-writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
+writeconfig = WriteConfig(state, fn='test_out', writeEvery=10000, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
 integVerlet.run(100000)
 #state.dt = 0.0200

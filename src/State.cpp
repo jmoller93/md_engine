@@ -52,7 +52,9 @@ State::State() {
     integUtil = IntegratorUtil(this);
     specialNeighborCoefs[0] = 0;
     specialNeighborCoefs[1] = 0;
-    specialNeighborCoefs[2] = 0.5;
+    specialNeighborCoefs[2] = 0;
+    specialNeighborCoefs[3] = 0;
+    specialNeighborCoefs[4] = 0;
     rng_is_seeded = false;
     units.setLJ();//default units are lj
 
@@ -292,10 +294,12 @@ int State::addSpecies(std::string handle, double mass) {
     return id;
 }
 */
-void State::setSpecialNeighborCoefs(float onetwo, float onethree, float onefour) {
+void State::setSpecialNeighborCoefs(float onetwo, float onethree, float onefour, float onefive, float onesix) {
     specialNeighborCoefs[0] = onetwo;
     specialNeighborCoefs[1] = onethree;
     specialNeighborCoefs[2] = onefour;
+    specialNeighborCoefs[3] = onefive;
+    specialNeighborCoefs[4] = onesix;
 }
 
 template <typename T>

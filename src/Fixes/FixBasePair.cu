@@ -33,9 +33,9 @@ void FixBasePair3SPN2::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
     } else {
-        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
     }
 
 }
@@ -58,6 +58,10 @@ void FixBasePair3SPN2::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double
             assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
     }
     forcers.push_back(BasePair3SPN2(a, b, c, d, phi0, sigma, epsi, theta1, theta2, type));
+    bonds.push_back(BondHarmonic(b,d, 0.0, 0.0, type));
+    bonds.push_back(BondHarmonic(a,d, 0.0, 0.0, type));
+    bonds.push_back(BondHarmonic(b,c, 0.0, 0.0, type));
+    bonds.push_back(BondHarmonic(a,c, 0.0, 0.0, type));
     pyListInterface.updateAppendedMember();
 }
 

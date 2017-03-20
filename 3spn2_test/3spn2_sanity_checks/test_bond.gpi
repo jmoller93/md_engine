@@ -1,0 +1,7 @@
+set term eps enhanced
+set output "bond_test.eps"
+
+binWidth = 0.5
+bin(x,width) = width * floor(x/width)
+plot '../hist.dat' u (bin($1,binWidth)):(1.0) smooth freq with boxes
+

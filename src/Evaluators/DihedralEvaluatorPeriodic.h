@@ -16,13 +16,14 @@ class DihedralEvaluatorPeriodic {
     
             //Make sure difference follows periodic behavior correctly
             if (diffPhi < -M_PI) diffPhi += 2.0f * M_PI;
-            else if (diffPhi > M_PI) diffPhi -= 2.0f * M_PI;
-
+            else if (diffPhi > M_PI) diffPhi -= 2.0f * M_PI; 
             
+            //if(dihedralType.coefs[1])
+                //printf("phi is %f\t phiref is %f\t force mag is %f\n",phi*180.0f/M_PI,dihedralType.phiRef*180.0f/M_PI, dihedralType.coefs[0] * sinf(diffPhi) +3.0f * dihedralType.coefs[1] * sinf(3.0f*diffPhi));
             return (
                     dihedralType.coefs[0] * sinf(diffPhi)
                     + 3.0f * dihedralType.coefs[1] * sinf(3.0f*diffPhi)
-                    )
+                )
                 ;
 
             /*//Evaluate derivatives

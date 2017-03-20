@@ -32,7 +32,7 @@ public:
     bool prepareForRun();
     void compute(bool);
     bool postRun();
-    void setParams(double seed, double gamma);
+    void setParams(int seed, float gamma);
 };
 
 

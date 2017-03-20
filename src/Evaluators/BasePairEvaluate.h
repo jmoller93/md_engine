@@ -67,7 +67,8 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         for (int i =0; i<2; i++) {
             if (c12Mags[i] > 1.0f) {
                 c12Mags[i] = 1.0f;
-            } else if (c12Mags[i] < -1.0f) {
+            }
+            else if (c12Mags[i] < -1.0f) {
                 c12Mags[i] = -1.0f;
             }
             thetas[i] = acosf(c12Mags[i]);
@@ -77,13 +78,14 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
 
         //printf("theta0 is %f, theta1 is %f\n", thetas[0] * 180.0f / M_PI, thetas[1] * 180.0f / M_PI);
 
-
         //IS THIS EVEN NEEDED?????
         float scValues[2]; //???, is s1, s2, s12 in lammps
         for (int i=0; i<2; i++) {
-            float x = max(1.0f - c12Mags[i]*c12Mags[i], 0.0f);
-            float sqrtVal = max(sqrtf(x), EPSILON);
-            scValues[i] = 1.0f / sqrtVal;
+            if (c12Mags[i] > (1.0f-EPSILON)) c12Mags[i] = (1.0f-EPSILON);
+            if (c12Mags[i] < (-1.0f+EPSILON)) c12Mags[i] = (-1.0f+EPSILON);
+            //float x = max(1.0f - c12Mags[i]*c12Mags[i], 0.0f);
+            //float sqrtVal = max(sqrtf(x), EPSILON);
+            scValues[i] = sqrtf(1.0f / (1.0f-c12Mags[i]*c12Mags[i]));
         }
         /*float scValues[2];
         for(int i=0; i<2; i++) {
@@ -113,15 +115,15 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         float c = -dot(cVector, dVector) * scValues[0] * scValues[1];
 
        //printf("c is %f\n", c);
-        if (c > 1.0f) {
-            c = 1.0f;
-        } else if (c < -1.0f) {
-            c = -1.0f;
+        if (c > (1.0f-EPSILON)) {
+            c = 1.0f-EPSILON;
+        } else if (c < (-1.0f+EPSILON)) {
+            c = -1.0f+EPSILON;
         }
         float phi = acosf(c);
         //printf("phi is %f\n", phi);
-        if (dx < 0) {
-            phi = -phi;
+        if (dx < 0.0f) {
+           phi = -phi;
         }
 
         //isb2 and isd2 in 3spn2 lammps
@@ -129,7 +131,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
             scValues[i] *= scValues[i]; 
         }
 
-   // printf("Theta0 is %f, theta1 is %f, and phi is %f\n", thetas[0] * 180.0f/ M_PI, thetas[1] * 180.0f / M_PI, phi * 180.0f / M_PI);
+   //printf("Theta0 is %f, theta1 is %f, and phi is %f\n", thetas[0] * 180.0f/ M_PI, thetas[1] * 180.0f / M_PI, phi * 180.0f / M_PI);
 
         float3 allForces[4];
 

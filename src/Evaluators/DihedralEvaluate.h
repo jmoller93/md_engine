@@ -96,23 +96,22 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
             c = -1.0f;
         }
         float phi = acosf(c);
-        // printf("phi is %f\n", phi);
-        // printf("dx is %f\n", dx);
+         //printf("phi is %f\n", phi);
+         //printf("dx is %f\n", dx);
         if (dx < 0) {
             phi = -phi;
         }
-        // printf("phi is %f\n", phi);
+         //printf("phi is %f\n", phi);
 
         //printf("no force\n");
         float dPotential = -1.0f * evaluator.dPotential(dihedralType, phi);
         float sinPhi = sinf(phi);
         float absSinPhi = sinPhi < 0 ? -sinPhi : sinPhi;
-        if (absSinPhi < EPSILON) {
-            sinPhi = EPSILON;
+        if (absSinPhi < 0.01f) {
+            sinPhi = 0.01f;
         }
         dPotential /= sinPhi;
         float3 forces[4];
-
 
         c *= dPotential;
         scValues[2] *= dPotential;
@@ -137,6 +136,9 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
         forces[0].z = a11Dir1.z + a12Dir2.z + a13Dir3.z;
         forces[1] = -sFloat3 - forces[0];
 
+        //if(dPotential > 100) {
+        //    printf("Force is large!!!! %f\tPhi is %f\t force is %f\t%f\t%f\n",dPotential,phi*180.0f/M_PI,forces[0].x,forces[0].y,forces[0].z);
+        //}
 
         float3 a13Dir1 = directors[0] * a13;
         float3 a23Dir2 = directors[1] * a23;
@@ -150,7 +152,9 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
             atomicAdd(&(fs[idxs[i]].x), (forces[i].x));
             atomicAdd(&(fs[idxs[i]].y), (forces[i].y));
             atomicAdd(&(fs[idxs[i]].z), (forces[i].z));
-        //    printf("f %d is %f %f %f\n", i, forces[i].x, forces[i].y, forces[i].z);
+            if(forces[i].x > 300 || forces[i].y > 300 || forces[i].z > 300) {
+                printf("phi %f\tf %d is %f %f %f\n", phi*180.0f/M_PI, i, forces[i].x, forces[i].y, forces[i].z);
+            }
         }
 
 

@@ -34,8 +34,8 @@ public:
 
         if(length(directors[1]) < basepairType.sigma) {
             //Use a purely repulsive Morse potential
-            energyMors = morsRepEnrgy(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
-            forceMors = morsRepForc(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
+            //energyMors = morsRepEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+            forceMors = morsRepForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
             forces[1].x -= forceMors * directors[1].x;
             forces[1].y -= forceMors * directors[1].y;
@@ -46,13 +46,14 @@ public:
         
             //printf("force 1: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
             //printf("force 3: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
+            //printf("length is %f\n", length(directors[1]));
         }
 
-        if ((dTheta1 >= -(cone * 0.5f)) && (dTheta1 <= cone * 0.5f)) {
-            if ((dTheta2 >= -(cone * 0.5f)) && (dTheta2 <= cone * 0.5f)) {
+        if ((dTheta1 >= (cone*-0.5f)) && (dTheta1 <= (cone*0.5f))) {
+            if ((dTheta2 >= (cone*-0.5f)) && (dTheta2 <= (cone*0.5f))) {
 
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
                 float fra1 = -ftor * invLens[0] * scValues[0] * energyMors;
                 forces[0].x += fra1 * cVector.x;
@@ -83,15 +84,16 @@ public:
                 //printf("force site d: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
             }
             //The modulated form of the morse potential only on theta 2
-            else if (((dTheta2 >= cone * 0.5f) && (dTheta2 <= cone)) || ((dTheta2 <= -cone * 0.5f) && (dTheta2 >= -cone))) {
+            else if (((dTheta2 >= (cone*0.5f)) && (dTheta2 <= cone)) || ((dTheta2 <= (cone*-0.5f)) && (dTheta2 >= (cone*-1)))) {
                 float cosine2 = cosf(range*dTheta2);
                 float sine2 = sinf(range*dTheta2);
                 float hbon_cosine2 = 1.0f - cosine2 * cosine2;
 
                 //Evaluate the morse potential and force
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
+                //printf("length is %f\t force is %f\t energy is %f\n",1.0f/invLens[1],forceMors,energyMors);
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f/ sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
 
                 //First site forces evaluated here under the given conditions (site b)
@@ -103,11 +105,14 @@ public:
                 forces[1].y += fr1.y * phiFactor;
                 forces[1].z += fr1.z * phiFactor;
 
+                //printf("lengths 1 is %f\t lengths 2 is %f\t lengths 3 is %f\n", directors[1].x*invLens[1], directors[1].y*invLens[1], directors[1].z*invLens[1]);
+                //printf("prefactor2 is %f\t c12Mags is %f\t energyMors is %f\t fr1 is %f\n", prefactor2, c12Mags[1], energyMors, fr1.y);
+
                 //Second site forces (which is actually site d)
                 float3 fr2;
                 fr2.x = prefactor2 * (invLens[2] * (directors[1].x * invLens[1] - c12Mags[1] * directors[2].x * invLens[2]) + invLens[1] * (directors[2].x * invLens[2] - c12Mags[1] * directors[1].x * invLens[1])) * energyMors + hbon_cosine2 * directors[1].x * forceMors;
                 fr2.y = prefactor2 * (invLens[2] * (directors[1].y * invLens[1] - c12Mags[1] * directors[2].y * invLens[2]) + invLens[1] * (directors[2].y * invLens[2] - c12Mags[1] * directors[1].y * invLens[1])) * energyMors + hbon_cosine2 * directors[1].y * forceMors;
-                fr2.z = prefactor2 * (invLens[2] * (directors[1].z * invLens[1] - c12Mags[1] * directors[2].z * invLens[2]) + invLens[1] * (directors[2].x * invLens[2] - c12Mags[1] * directors[1].z * invLens[1])) * energyMors + hbon_cosine2 * directors[1].z * forceMors;
+                fr2.z = prefactor2 * (invLens[2] * (directors[1].z * invLens[1] - c12Mags[1] * directors[2].z * invLens[2]) + invLens[1] * (directors[2].z * invLens[2] - c12Mags[1] * directors[1].z * invLens[1])) * energyMors + hbon_cosine2 * directors[1].z * forceMors;
                 forces[3].x += fr2.x * phiFactor;
                 forces[3].y += fr2.y * phiFactor;
                 forces[3].z += fr2.z * phiFactor;
@@ -148,6 +153,10 @@ public:
                 forces[2].y += frd1 * dVector.y;
                 forces[2].z += frd1 * dVector.z;
 
+                //printf("force site ar: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site br: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site cr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site dr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
 
             }
             else {
@@ -157,16 +166,17 @@ public:
         }
 
         //Modulated theta1
-        else if (((dTheta1 >= cone * 0.5f) && (dTheta1 <= cone)) || ((dTheta1 <= -cone*0.5) && (dTheta1 >= -cone))) {
+        else if (((dTheta1 >= (cone * 0.5f)) && (dTheta1 <= cone)) || ((dTheta1 <= (-cone*0.5)) && (dTheta1 >= (cone*-1)))) {
             float cosine = cosf(range*dTheta1);
             float sine = sinf(range*dTheta1);
             float hbon_cosine = 1.0f - cosine * cosine;
     
             //Full potential for theta2 and modulated theta1
-            if ((dTheta2 >= -cone*0.5f) && (dTheta2 <= cone*0.5f)) {
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
+            if ((dTheta2 >= (-cone*0.5f)) && (dTheta2 <= (cone*0.5f))) {
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
+                //printf("length is %f\t force is %f\t energy is %f\n",1.0f/invLenSqrs[1],forceMors,energyMors);
                 float prefactor = 2.0f * range * cosine * sine * 1.0f/ sqrtf(1.0f - c12Mags[0] * c12Mags[0]);
 
                 //Site a forces
@@ -222,16 +232,22 @@ public:
                 forces[2].x += frd1 * dVector.x;
                 forces[2].y += frd1 * dVector.y;
                 forces[2].z += frd1 * dVector.z;
+
+                //printf("force site arr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site brr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site crr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site drr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
             }
             //Both potentials are modulated
-            else if (((dTheta2 >= (cone * 0.5f)) && (dTheta2 <= cone)) || (((dTheta2 <= (-cone*0.5f)) && (dTheta2 >= -cone)))) {
+            else if (((dTheta2 >= (cone * 0.5f)) && (dTheta2 <= cone)) || ((dTheta2 <= (-cone*0.5f)) && (dTheta2 >= (cone*-1)))) {
                 float cosine2 = cosf(range*dTheta2);
                 float sine2 = sinf(range*dTheta2);
                 float hbon_cosine2 = 1.0f - cosine2 * cosine2;
 
-                energyMors = morsAttrEnrgy(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
-                forceMors = morsAttrForc(invLenSqrs[1], alpha, basepairType.epsi, basepairType.sigma);
+                energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
+                forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
 
+                //printf("length is %f\t force is %f\t energy is %f\t sigma is %f\t alpha is %f\n",1.0f/invLenSqrs[1],forceMors,energyMors,basepairType.sigma, alpha);
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f / sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
                 float prefactor  = 2.0f * range * cosine  * sine  * 1.0f / sqrtf(1.0f - c12Mags[0] * c12Mags[0]);
 
@@ -298,6 +314,10 @@ public:
                 forces[2].y += frd1 * dVector.y;
                 forces[2].z += frd1 * dVector.z;
 
+                //printf("force site arrr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site brrr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site crrr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site drrr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
 
 
             }

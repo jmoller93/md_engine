@@ -19,6 +19,7 @@ public:
             float r2inv = 1/lenSqr;
             float r6inv = r2inv*r2inv*r2inv;
             float forceScalar = r6inv * r2inv * (p1 * r6inv - p2) * multiplier;
+            //printf("force is %f\t dist is %f\t sigma is %f\n", forceScalar, sqrtf(lenSqr), sqrtf(params[2]));
 
             return dr * forceScalar;
         }

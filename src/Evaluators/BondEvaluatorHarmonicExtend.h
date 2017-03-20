@@ -11,8 +11,10 @@ public:
         float dr = r - bondType.r0;
         float rk = 2.0f *bondType.k * dr;
         float rk3 = rk * 200.0f * dr * dr;
+        //float rk3 = rk * dr * dr;
         if (r > 0) {//MAKE SURE ALL THIS WORKS, I JUST BORROWED FROM LAMMPS
             float fBond = -(rk+rk3)/r;
+            //printf("f %f\n", fBond);
             return bondVec * fBond;
         } 
         return make_float3(0, 0, 0);

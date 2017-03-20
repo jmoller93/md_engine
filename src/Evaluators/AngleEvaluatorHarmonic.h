@@ -11,7 +11,7 @@ public:
     //evaluator.force(theta, angleType, s, distSqrs, directors, invDotProd);
     inline __device__ float3 force(AngleHarmonicType angleType, float theta, float s, float c, float distSqrs[2], float3 directors[2], float invDistProd, int myIdxInAngle) {
         float dTheta = theta - angleType.theta0;
-        //   printf("current %f theta eq %f idx %d, type %d\n", acosf(c), angleType.theta0, myIdxInAngle, type);
+           //printf("current %f theta eq %f idx %d\n", acosf(c)*180.0f/M_PI, angleType.theta0*180.0f/M_PI, myIdxInAngle);
         
 
         float forceConst = angleType.k * dTheta;

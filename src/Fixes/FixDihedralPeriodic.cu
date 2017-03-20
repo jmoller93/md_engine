@@ -21,9 +21,9 @@ void FixDihedralPeriodic::compute(bool computeVirials) {
 
     GPUData &gpd = state->gpd;
     if (computeVirials) {
-        compute_force_dihedral<DihedralPeriodicType, DihedralEvaluatorPeriodic, true><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_dihedral<DihedralPeriodicType, DihedralEvaluatorPeriodic, true><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
     } else {
-        compute_force_dihedral<DihedralPeriodicType, DihedralEvaluatorPeriodic, false><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
+        compute_force_dihedral<DihedralPeriodicType, DihedralEvaluatorPeriodic, false><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
     }
 
 }
@@ -34,7 +34,7 @@ void FixDihedralPeriodic::singlePointEng(float *perParticleEng) {
 
     GPUData &gpd = state->gpd;
     //compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralPeriodicType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
-    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), usingSharedMemForParams, evaluator);
+    compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), false, evaluator);
     
 
 }
@@ -50,6 +50,7 @@ void FixDihedralPeriodic::createDihedral(Atom *a, Atom *b, Atom *c, Atom *d, dou
         assert(phiRef != COEF_DEFAULT);
     }
     forcers.push_back(DihedralPeriodic(a, b, c, d, vs, phiRef, type));
+    //bonds.push_back(BondHarmonic(a,d,0.0,0.0,type));
     pyListInterface.updateAppendedMember();
 }
 

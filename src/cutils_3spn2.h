@@ -50,7 +50,7 @@ inline __device__ float morsRepEnrgy(const float drsi, const float alfa, const f
 inline __device__ float morsRepForc(const float drsi, const float alfa, const float epsi, const float sigma) {
     float dist = 1.0f / drsi;
     float forc;
-    if (dist > sigma) {
+    if (dist < sigma) {
         float argu = alfa * (dist - sigma);
         float mors = expf(-argu);
         forc = -2.0f * alfa * epsi * drsi * mors * (1.0f - mors);

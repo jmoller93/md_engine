@@ -27,13 +27,13 @@ public:
         float coneHalf = cone * 0.5f;
         float3 frepul = make_float3(0.0f, 0.0f, 0.0f);
 
+        //printf("theta is %f, theta ref is %f, dTheta is %f\n", theta*180.0f/M_PI, angleType.theta0*180.0f/M_PI, dTheta*180.0f/M_PI); 
+
         if(r2 < angleType.sigma)
         {
             //Use a purely repulsive Morse potential
             float argu = alpha * (r2 - angleType.sigma);
-            if (r2 > 0) {
-                fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
-            }
+            fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
             //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
             if (myIdxInAngle == 1) {
                 frepul -= fmorse * directors[1];
@@ -49,6 +49,7 @@ public:
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
                 //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
+                //printf("Argu is %f, alpha is %f, emorse is %f, fmorse is %f\n", argu, alpha, emorse, fmorse);
             }
             else {
                 fmorse = 0.0f;
@@ -70,6 +71,7 @@ public:
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
                 //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
+                //printf("Argu is %f, alpha is %f, emorse is %f, fmorse is %f sucker\n", argu, alpha, emorse, fmorse);
             }
             else {
                 fmorse = 0.0f;
@@ -91,9 +93,9 @@ public:
                 frepul.y += (directors[0].y * a11 + directors[1].y * a12);
                 frepul.z += (directors[0].z * a11 + directors[1].z * a12);
             } else if (myIdxInAngle==1) {
-                frepul.x -= (directors[0].x * a11 + directors[1].x * a12) + (directors[1].x * a22 + directors[0].x * a12 + cosine_term * directors[1].x * fmorse);
-                frepul.y -= (directors[0].y * a11 + directors[1].y * a12) + (directors[1].y * a22 + directors[0].y * a12 + cosine_term * directors[1].y * fmorse); 
-                frepul.z -= (directors[0].z * a11 + directors[1].z * a12) + (directors[1].z * a22 + directors[0].z * a12 + cosine_term * directors[1].z * fmorse);
+                frepul.x -= ((directors[0].x * a11 + directors[1].x * a12) + (directors[1].x * a22 + directors[0].x * a12 + cosine_term * directors[1].x * fmorse));
+                frepul.y -= ((directors[0].y * a11 + directors[1].y * a12) + (directors[1].y * a22 + directors[0].y * a12 + cosine_term * directors[1].y * fmorse)); 
+                frepul.z -= ((directors[0].z * a11 + directors[1].z * a12) + (directors[1].z * a22 + directors[0].z * a12 + cosine_term * directors[1].z * fmorse));
             } else {
                 frepul.x += directors[1].x * a22 + directors[0].x * a12 + (cosine_term * directors[1].x * fmorse);
                 frepul.y += directors[1].y * a22 + directors[0].y * a12 + (cosine_term * directors[1].y * fmorse);
@@ -177,7 +179,7 @@ public:
 
         if(r2 < angleType.sigma)
         {
-            //Use a purely repulsive Morse poten
+            //Use a purely repulsive Morse potential for this distance
             float argu = alpha * (r2 - angleType.sigma);
             emorse += angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu));
         }

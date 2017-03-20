@@ -1,0 +1,10 @@
+4           :: # of rest
+2           ::rest number
+1 0 1     ::site + 1, force, dir
+2           ::rest number
+1335 0 1  ::site + 1, force, dir
+2           ::rest number
+667 0 0   ::site + 1, force, dir
+2           ::rest number
+669 0 0   ::site + 1, force, dir
+
