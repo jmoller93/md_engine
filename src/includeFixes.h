@@ -10,8 +10,10 @@
 #include "FixAngleBaseStacking.h"
 #include "FixBondGoLike.h"
 #include "FixAngleHarmonic.h"
+#include "FixAngleCHARMM.h"
 #include "FixAngleCosineDelta.h"
 #include "FixImproperHarmonic.h"
+#include "FixImproperCVFF.h"
 #include "FixDihedralOPLS.h"
 #include "FixDihedralPeriodic.h"
 #include "FixDihedralGauss.h"
@@ -34,5 +36,6 @@
 #include "FixWCA.h"
 #include "FixPressureBerendsen.h"
 #include "FixLinearMomentum.h"
+#include "FixRigid.h"
 
 #endif
