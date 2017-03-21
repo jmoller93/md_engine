@@ -1,6 +1,4 @@
-#ifndef FIX_CHARGE_EWALD_H
-#define FIX_CHARGE_EWALD_H
-
+#pragma once
 #include <cufft.h>
 
 //#include "AtomParams.h"
@@ -52,6 +50,7 @@ private:
     float3 h;
     float3 L;
     GPUArrayDeviceGlobal<Virial> virialField;
+    GPUArrayDeviceGlobal<float4> storedForces;
     BoundsGPU boundsLastOptimize;
     float total_Q2LastOptimize;    
     void handleBoundsChangeInternal(bool);
@@ -61,7 +60,10 @@ private:
         
     bool malloced;
 
+
 public:
+    int longRangeInterval;
+    int64_t turnInit;
     void handleBoundsChange();
     FixChargeEwald(boost::shared_ptr<State> state_,
                    std::string handle_, std::string groupHandle_);
@@ -75,6 +77,7 @@ public:
 
     //! Compute forces
     void compute(bool);
+    int setLongRangeInterval(int interval);
 
     //! Compute single point energy
     void singlePointEng(float *);
@@ -87,9 +90,9 @@ public:
         res.push_back(r_cut);
         return res;
     }    
-    ChargeEvaluatorEwald generateEvaluator(); 
 
-    bool calcLongRange;
+    ChargeEvaluatorEwald generateEvaluator();
+    void setEvalWrapper();
+    void setEvalWrapperOrig();
 };
 
-#endif

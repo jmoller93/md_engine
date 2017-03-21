@@ -1,22 +1,18 @@
 #pragma once
-#ifndef FIX_PAIR_H
-#define FIX_PAIR_H
-
-#define DEFAULT_FILL -1000
 
 #include <climits>
 #include <map>
 #include <string>
 #include <vector>
-#include <iostream>//makes it compile on my machine  (error: cout is not a member of std)
+#include <iostream>
 
+#include "globalDefs.h"
 #include "AtomParams.h"
 #include "GPUArrayGlobal.h"
 #include "Fix.h"
 #include "xml_func.h"
 #include "SquareVector.h"
 #include "BoundsGPU.h"
-class EvaluatorWrapper;
 void export_FixPair();
 
 class State;
@@ -140,9 +136,8 @@ protected:
     void ensureOrderGivenForAllParams();
     Fix *chargeCalcFix;
     BoundsGPU boundsLast;
-    boost::shared_ptr<EvaluatorWrapper> evalWrap;
-    void acceptChargePairCalc(Fix *chargeFix); 
-    virtual void setEvalWrapper() = 0;
+    void acceptChargePairCalc(Fix *);
+    float chargeRCut;
 public:
     //! Set a specific parameter for specific particle types
     /*!
@@ -151,18 +146,32 @@ public:
      * \param handleB String specigying second atom type
      * \param val Value of the parameter
      *
-     * \return False always
+     * \return False if not set, True if set
      *
      * This function sets a specific parameter for the pair potential
      * between two atom types.
      *
-     * \todo Shouldn't this function return True is parameters are set
-     *       successfully?
      */
     bool setParameter(std::string param,
                       std::string handleA,
                       std::string handleB,
                       double val);
+//! Get a specific parameter for specific particle types
+    /*!
+     * \param param String specifying the parameter to set
+     * \param handleA String specifying first atom type
+     * \param handleB String specigying second atom type
+     *
+     * \return value of parameter if valid parameter, otherwise will fail
+     *
+     * This function gets a specific parameter for the pair potential
+     * between two atom types.
+     *
+     */
+    double getParameter(std::string param,
+                      std::string handleA,
+                      std::string handleB);
+
 
     //! Reste parameters to before processing
     /*!
@@ -170,4 +179,3 @@ public:
      */
     void handleBoundsChange();
 };
-#endif

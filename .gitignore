@@ -22,10 +22,13 @@ doc/html/
 doc/latex/
 # Build directory:
 build/
+build7.5/
 build-7.5/
+build_temp/
 src/Makefile
 Makefile
 benchmark/*nvprof
 examples/readLammpsInput/chlorobenzene
 examples/readLammpsInput/chlorobenzene_small
 CMakeLists.txt
+python/setup.py
