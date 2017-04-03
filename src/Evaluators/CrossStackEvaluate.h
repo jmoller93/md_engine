@@ -1,5 +1,5 @@
 template <class CROSSSTACKTYPE, class EVALUATOR, bool COMPUTEVIRIALS>
-__global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *fs, int *idToIdxs, CrossStackGPU *crossstacks, int *startstops, BoundsGPU bounds, CROSSSTACKTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
+__global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *fs, int *idToIdxs, CrossStackGPU *crossstacks,  BoundsGPU bounds, CROSSSTACKTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
 
 
     int idx = GETIDX();
@@ -114,6 +114,10 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
             atomicAdd(&(fs[idxs[i]].x), (allForces[i].x));
             atomicAdd(&(fs[idxs[i]].y), (allForces[i].y));
             atomicAdd(&(fs[idxs[i]].z), (allForces[i].z));
+            if(allForces[i].x > 100 || allForces[i].y > 100 || allForces[i].z > 100) {
+                printf("cross stack forces are large %f %f %f\n",allForces[i].x,allForces[i].y,allForces[i].z);
+                printf("ids are %d\n", i);
+            }
         }
 
         //Compute the virials, NOTE: may not be working at this moment, but running NPT on a single molecule would be unhelpful
@@ -130,7 +134,7 @@ __global__ void compute_force_crossstack(int nCrossStacks, float4 *xs, float4 *f
 
 
 template <class CROSSSTACKTYPE, class EVALUATOR>
-__global__ void compute_energy_crossstack(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, CrossStackGPU *crossstacks, int *startstops, BoundsGPU bounds, CROSSSTACKTYPE *parameters, int nParameters, EVALUATOR evaluator) {
+__global__ void compute_energy_crossstack(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, CrossStackGPU *crossstacks,  BoundsGPU bounds, CROSSSTACKTYPE *parameters, int nParameters, EVALUATOR evaluator) {
 
 
     /*int idx = GETIDX();

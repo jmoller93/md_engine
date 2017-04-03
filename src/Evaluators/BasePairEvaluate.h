@@ -1,5 +1,5 @@
 template <class BASEPAIRTYPE, class EVALUATOR, bool COMPUTEVIRIALS> //don't need BasePairGPU, are all BasePairGPU.  Worry about later 
-__global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
+__global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, int *idToIdxs, BasePairGPU *basepairs, BoundsGPU bounds, BASEPAIRTYPE *parameters_arg, int nParameters, Virial *virials, bool usingSharedMemForParams, EVALUATOR evaluator) {
 
 
     int idx = GETIDX();
@@ -27,6 +27,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
             int idxOther = idToIdxs[basepair.ids[i]];
             idxs[i] = idxOther;
             positions[i] = make_float3(xs[idxOther]);
+            //printf("idxOther is %f\t idxToIdxs is %f\n", idxOther, idToIdxs[basepair.ids[i]]);
         }
         for (int i=1; i<4; i++) {
             positions[i] = positions[0] + bounds.minImage(positions[i]-positions[0]);
@@ -151,6 +152,15 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
             atomicAdd(&(fs[idxs[i]].y), (allForces[i].y));
             atomicAdd(&(fs[idxs[i]].z), (allForces[i].z));
             //printf("f %d is %f %f %f\n", i, forces[i].x, forces[i].y, forces[i].z);
+            if(allForces[i].x > 100.0 || allForces[i].y > 100.0 || allForces[i].z > 100) {
+                //printf("base pair forces are large! %f\t%f\t%f\n", allForces[i].x, allForces[i].y, allForces[i].z);
+                //printf("base pair forces are large! %d\n", idxs[i]);
+            }
+            //if(fs[idxs[i]].x > 100.0 || fs[idxs[i]].y > 100.0 || fs[idxs[i]].z > 100.0) {
+            //    printf("base pair forrrces are large! %f\t%f\t%f\n", fs[idxs[i]].x, fs[idxs[i]].y, fs[idxs[i]].z);
+            //    printf("base pair forrrces are large! %d\n", idxs[i]);
+
+            //}
         }
 
         if (COMPUTEVIRIALS) {
@@ -167,7 +177,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
 
 
 template <class BASEPAIRTYPE, class EVALUATOR>
-__global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, BasePairGPU *basepairs, int *startstops, BoundsGPU bounds, BASEPAIRTYPE *parameters, int nParameters, EVALUATOR evaluator) {
+__global__ void compute_energy_basepair(int nAtoms, float4 *xs, float *perParticleEng, int *idToIdxs, BasePairGPU *basepairs, BoundsGPU bounds, BASEPAIRTYPE *parameters, int nParameters, EVALUATOR evaluator) {
 
 
     /*int idx = GETIDX();

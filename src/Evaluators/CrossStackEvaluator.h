@@ -25,7 +25,6 @@ public:
         //printf("dTheta0 is %f, dTheta1 is %f, dTheta2 is %f\n", dTheta3 * 180.0f/M_PI, dTheta1 * 180.0f/M_PI, dTheta2 * 180.0f/M_PI);
         //printf("theta0 is %f, theta1 is %f, theta2 is %f\n", thetas[0] * 180.0f/M_PI, thetas[1]* 180.0f/M_PI, thetas[2] * 180.0f/M_PI);
         //printf("theta0 is %f, theta1 is %f, theta2 is %f\n", crossstackType.theta3*180.0f/M_PI,crossstackType.theta1*180.0f/M_PI, crossstackType.theta2*180.0f/M_PI);
-        //printf("c12Magsd %f\t%f\n", c12Mags[0], c12Mags[1]);
         //printf("range and alpha %f\t%f\n", range, alpha);
         
         //Store the "cone of interaction" values
@@ -42,10 +41,12 @@ public:
 
                 //Evaluate the Morse potentials
                 forceMors = morsAttrForc(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                //printf("dist and sigma are %f\t%f\n", 1.0f/invLens[3], crossstackType.sigma1);
 
                 //Only applied to sites b and e
                 forces[4] -= forceMors * directors[3];
                 forces[1] += forceMors * directors[3];
+                //printf("forces and stuff is %f\n", forceMors);
             }
             //The modulated form of the morse potential only on theta 1
             else if (((dTheta1 >= coneHalf) && (dTheta1 <= cone)) || ((dTheta1 <= -coneHalf) && (dTheta1 >= -cone))) {
@@ -71,14 +72,18 @@ public:
                 //Site e forces
                 fr = prefactor2 * (invLens[3] * (directors[3] * invLens[3] * c12Mags[1] - directors[0] * invLens[0])) * energyMors - cross_term * directors[3] * forceMors; 
                 forces[4] += fr;
+
+                //printf("forrces and stuff is %f\n", forceMors);
             }
             else {
+                //printf("Hallo\n");
                 //Nothing else happens here. I've cheated you. I've cheated ALL of you
             }
         }
 
         //Modulated theta3
         else if (((dTheta3 >= coneBp*0.5f) && (dTheta3 <= coneBp)) || ((dTheta3 <= -coneBp*0.5f) && (dTheta3 >= -coneBp))) {
+            //printf("Hollo\n");
 
             //More angle parameters for theta3
             float cosine = cosf(12.0f*dTheta3);
@@ -89,6 +94,7 @@ public:
             //Full potential for theta1 and modulated theta3
             if ((dTheta1 >= -coneHalf) && (dTheta1 <= coneHalf)) {
 
+                //printf("Hollo\n");
                 //Calculate Morse potential and forces again
                 energyMors = morsAttrEnrgy(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
                 forceMors = morsAttrForc(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
@@ -113,6 +119,8 @@ public:
                 //Site e forces
                 fr = -basepair_term * directors[3] * forceMors;
                 forces[4] += fr;
+                //printf("forrrces and stuff is %f\n", forceMors);
+                //printf("dist and sigma are %f\t%f\n", 1.0f/invLens[3], crossstackType.sigma1);
             }
             //Both potentials are modulated
             else if (((dTheta1 >= (coneHalf)) && (dTheta1 <= cone)) || (((dTheta1 <= (-coneHalf)) && (dTheta1 >= -cone)))) {
@@ -146,6 +154,7 @@ public:
                 fr = prefactor2 * (invLens[3] * (directors[3] * invLens[3] * c12Mags[1] - directors[0] * invLens[0])) * basepair_term * energyMors - basepair_term * cross_term * directors[3] * forceMors;
                 forces[4] += fr;
 
+                //printf("forrrrces and stuff is %f\n", forceMors);
             }
             else {
                 //More nothingness
@@ -166,6 +175,7 @@ public:
                 //Only applied to sites d and f
                 forces[5] -= forceMors * directors[4];
                 forces[3] += forceMors * directors[4];
+                //printf("dist and sigma are %f\t%f\n", 1.0f/invLens[4], crossstackType.sigma2);
             }
             //The modulated form of the morse potential only on theta 2
             else if (((dTheta2 >= coneHalf) && (dTheta2 <= cone)) || ((dTheta2 <= -coneHalf) && (dTheta2 >= -cone))) {
@@ -178,7 +188,7 @@ public:
                 //Evaluate the morse potential and force
                 energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
                 forceMors = morsAttrForc(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
-                //printf("forceMors = %f\n",forceMors);
+                //printf("forrrrrceMors = %f\n",forceMors);
 
                 //Site c forces
                 float3 fr1;
@@ -215,7 +225,7 @@ public:
                 //Calculate Morse potential and forces again
                 energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
                 forceMors = morsAttrForc(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
-                //printf("forceMorrs = %f\n",forceMors);
+                //printf("forceMorrrrrrrs = %f\n",forceMors);
 
                 //Site a forces
                 float3 fr;
@@ -248,7 +258,7 @@ public:
                 //More evaluations of the Morse potential
                 energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
                 forceMors = morsAttrForc(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
-                //printf("forceMorrrs = %f\n",forceMors);
+                //printf("forceMorrrrrrrrs = %f\n",forceMors);
 
                 //Site a
                 float3 fr;

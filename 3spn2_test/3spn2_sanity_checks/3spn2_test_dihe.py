@@ -64,20 +64,10 @@ for line in f:
     state.atomParams.addSpecies(handle=str(spcsInfo[1]), mass=float(spcsInfo[3]))
 
 #The excluded volume nonbonded potential
-nonbond = FixLJRepul(state, 'excluded')
-
-for i in range(len(spcs)):
-    for j in range(len(spcs)):
-        sig = (sigma[i] + sigma[j])*0.89
-        nonbond.setParameter('rCut', spcs[i], spcs[j], sig)
-        nonbond.setParameter('sig', spcs[i], spcs[j], sig)
-        nonbond.setParameter('eps', spcs[i], spcs[j], 1.0/kcal)
-
-#state.activateFix(nonbond)
 
 #The Debye Huckel electrostatics
 electric = FixChargePairDH(state, 'debyeHuckel', 'all')
-electric.setParameters(300,0.150)
+electric.setParameters(300,0.150,10.0)
 #state.activateFix(electric)
 
 #Remember the base pair identity of the particle if it is a base pair for
@@ -105,7 +95,7 @@ state.activateFix(bondDNA)
 angleDNA = FixAngleHarmonic(state, 'angleDNA')
 angleDNA.createAngle(state.atoms[0],state.atoms[1],state.atoms[2],2.0*355.0/kcal,94.784734*rad)
 angleDNA.createAngle(state.atoms[1],state.atoms[2],state.atoms[3],2.0*355.0/kcal,108.833652*rad)
-state.activateFix(angleDNA)
+#state.activateFix(angleDNA)
 
 #Lets test all 3 dihedral potentials
 diheDNA = FixDihedralGauss(state, 'diheDNA')
@@ -121,22 +111,21 @@ diheDNA.createDihedral(state.atoms[0],state.atoms[1],state.atoms[2],state.atoms[
 
 
 #I 100% trust the base pair dihedral potential, conserves energy and does not explode
-diheBase.createBasePair(state.atoms[0],state.atoms[1],state.atoms[2],state.atoms[3], -38.18*rad,5.82,15/kcal,153.17*rad,133.51*rad)
+diheBase.createBasePair(state.atoms[0],state.atoms[1],state.atoms[2],state.atoms[3], -38.18*rad,5.82,20/kcal,153.17*rad,133.51*rad)
 diheBase.setParameters(2.000,12.000)
 #state.activateFix(diheDNA)
 state.activateFix(diheBase)
 
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
 #InitializeAtoms.initTemp(state, 'all', 1.0)
-InitializeAtoms.initTemp(state, 'all', 300.0)
-fixNVT = FixLangevin(state, 'temp', 'all', 300.0)
+InitializeAtoms.initTemp(state, 'all', 10.0)
+fixNVT = FixLangevin(state, 'temp', 'all', 10.0)
 
 #500 is the damping coefficient which is ~1/gamma (gamma is 500 for lammps version of 3spn2)
 fixNVT.setParameters(0,0.002)
 state.activateFix(fixNVT)
 
 #Other things that we may want to output to make sure the simulation is running correctly
-tempData = state.dataManager.recordTemperature('all', 100)
 
 #state.dataManager.recordEnergy(interval=10, mode='scalar', fixes=[angleDNA, dihePeri])
 
@@ -146,6 +135,6 @@ integRelax  = IntegratorRelax(state)
 writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
 #integRelax.run(100,1e-4)
-integVerlet.run(10000)
+integVerlet.run(100000)
 print tempData.vals
 exit()

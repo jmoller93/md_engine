@@ -21,7 +21,7 @@ state.padding = 0.5
 state.periodicInterval = 100
 state.shoutEvery = 1000
 state.dt = 20.0
-state.setSpecialNeighborCoefs(0, 0, 0, 0, 0)
+state.setSpecialNeighborCoefs(0, 0, 0)
 
 #kJ to kcal converter
 kcal = 4.18
@@ -75,8 +75,8 @@ state.activateFix(nonbond)
 
 #The Debye Huckel electrostatics
 electric = FixChargePairDH(state, 'debyeHuckel', 'all')
-electric.setParameters(100,0.150)
-#state.activateFix(electric)
+electric.setParameters(100,0.150,30)
+state.activateFix(electric)
 
 #Remember the base pair identity of the particle if it is a base pair for
 #later interactions
@@ -207,24 +207,24 @@ for line in f:
 state.activateFix(cstack)
 
 #We use a Langevin thermostat (Bussi-Parrinello in original model)
-InitializeAtoms.initTemp(state, 'all', 100.0)
-fixNVT = FixLangevin(state, 'temp', 'all', 100.0)
+InitializeAtoms.initTemp(state, 'all', 300.0)
+fixNVT = FixLangevin(state, 'temp', 'all', 300.0)
 
 #500 is the damping coefficient which is ~1/gamma (gamma is 500 for lammps version of 3spn2)
-fixNVT.setParameters(0,0.002)
+fixNVT.setParameters(0,0.02)
 state.activateFix(fixNVT)
 
 #Other things that we may want to output to make sure the simulation is running correctly
-tempData = state.dataManager.recordTemperature('all', 50)
+#tempData = state.dataManager.recordTemperature('all', 50)
 
 #Run the actual system
 integVerlet = IntegratorVerlet(state)
 integRelax = IntegratorGradientDescent(state)
 integRelax2 = IntegratorRelax(state)
 #integRelax.run(10000,0.001)
-#integRelax2.run(10000,1e-4)
+#integRelax2.run(1000,1e-4)
 writeconfig = WriteConfig(state, fn='test_out', writeEvery=100, format='xyz', handle='writer')
 state.activateWriteConfig(writeconfig)
-integVerlet.run(1)
+integVerlet.run(20000)
 exit()
 
