@@ -38,7 +38,7 @@ void InitializeAtoms::populateOnGrid(SHARED(State) state, Bounds &bounds,
                     return;
                 }
                 Vector pos = bounds.lo + Vector(i, j, k) * deltaPerSide;
-                state->addAtom(handle, pos, 0);
+                state->addAtom(handle, pos, 0, 0);
             }
         }
     }
@@ -85,7 +85,7 @@ void InitializeAtoms::populateRand(SHARED(State) state, Bounds &bounds,
             }
         }
         if (not is_overlap) {
-            state->addAtom(handle, pos, 0);
+            state->addAtom(handle, pos, 0, 0);
             id++;
             tries = 0;
         }

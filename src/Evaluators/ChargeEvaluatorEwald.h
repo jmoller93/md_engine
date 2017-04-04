@@ -8,7 +8,7 @@ class ChargeEvaluatorEwald {
     public:
         float alpha;
         float qqr_to_eng;
-        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier) {
+        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier, float molParam) {
             if (lenSqr < 1e-10) {
                 lenSqr = 1e-10;
             }

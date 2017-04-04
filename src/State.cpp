@@ -53,8 +53,6 @@ State::State() {
     specialNeighborCoefs[0] = 0;
     specialNeighborCoefs[1] = 0;
     specialNeighborCoefs[2] = 0;
-    specialNeighborCoefs[3] = 0;
-    specialNeighborCoefs[4] = 0;
     rng_is_seeded = false;
     units.setLJ();//default units are lj
     exclusionMode = EXCLUSIONMODE::DISTANCE;
@@ -73,12 +71,12 @@ bool State::atomInGroup(Atom &a, std::string handle) {
     return a.groupTag & tag;
 }
 
-int State::addAtom(std::string handle, Vector pos, double q) {
+int State::addAtom(std::string handle, Vector pos, double q, int mol_id) {
     std::vector<std::string> &handles = atomParams.handles;
     auto it = find(handles.begin(), handles.end(), handle);
     assert(it != handles.end());
     int idx = it - handles.begin();//okay, so index in handles is type
-    Atom a(pos, idx, -1, atomParams.masses[idx], q, &handles);
+    Atom a(pos, idx, -1, mol_id, atomParams.masses[idx], q, &handles);
     bool added = addAtomDirect(a);
     if (added) {
         return atoms.back().id;
@@ -356,12 +354,10 @@ int State::addSpecies(std::string handle, double mass) {
     return id;
 }
 */
-void State::setSpecialNeighborCoefs(float onetwo, float onethree, float onefour, float onefive, float onesix) {
+void State::setSpecialNeighborCoefs(float onetwo, float onethree, float onefour) {
     specialNeighborCoefs[0] = onetwo;
     specialNeighborCoefs[1] = onethree;
     specialNeighborCoefs[2] = onefour;
-    specialNeighborCoefs[3] = onefive;
-    specialNeighborCoefs[4] = onesix;
 }
 
 void State::setExclusionMode(std::string mode) {
@@ -500,9 +496,14 @@ bool State::prepareForRun() {
     ids.reserve(nAtoms);
     qs.reserve(nAtoms);
 
+    uint32_t atom_info;
+
     for (const auto &a : atoms) {
+        //bit shift two 16 bit items to make a 32 bit unsigned int sent to the kernel
+        atom_info = a.mol_id << 16 | a.type;
+
         xs_vec.push_back(make_float4(a.pos[0], a.pos[1], a.pos[2],
-                                     *(float *)&a.type));
+                                     *(float *)&atom_info));
         vs_vec.push_back(make_float4(a.vel[0], a.vel[1], a.vel[2],
                                      1/a.mass));
         fs_vec.push_back(make_float4(a.force[0], a.force[1], a.force[2],
@@ -803,7 +804,8 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(State_seedRNG_overloads,State::seedRNG,0,
                 .def("addAtom", &State::addAtom,
                         (py::arg("handle"),
                          py::arg("pos"),
-                         py::arg("q")=0)
+                         py::arg("q")=0,
+                         py::arg("mol_id")=0)
                     )
                 .def_readonly("atoms", &State::atoms)
                 .def_readonly("molecules", &State::molecules)

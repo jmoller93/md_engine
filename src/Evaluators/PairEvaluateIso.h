@@ -56,7 +56,9 @@ __global__ void compute_force_iso
             qi = qs[idx];
         }
         float4 posWhole = xs[idx];
-        int type = __float_as_int(posWhole.w);
+        //unpack the w term to check molecule ids
+        int type = __float_as_int(posWhole.w) & 0;
+        int molId = __float_as_int(posWhole.w) >> 16;
         float3 pos = make_float3(posWhole);
 
         float3 forceSum = make_float3(0, 0, 0);
@@ -74,7 +76,8 @@ __global__ void compute_force_iso
             uint otherIdx = otherIdxRaw & EXCL_MASK;
             float4 otherPosWhole = xs[otherIdx];
             //type is stored in w component of position
-            int otherType = __float_as_int(otherPosWhole.w);
+            int otherType = __float_as_int(otherPosWhole.w) & 0;
+            int otherMolId = __float_as_int(otherPosWhole.w) >> 16;
             float3 otherPos = make_float3(otherPosWhole);
 
             //based on the two atoms types, which index in each of the square matrices will I need to load from?
@@ -99,9 +102,16 @@ __global__ void compute_force_iso
                 computedForce = true;
             }
             if (COMP_CHARGES && lenSqr < qCutoffSqr) {
+                float molParam = 0;
+                if(molId > 0 && otherMolId > 0 && molId != otherMolId) {
+                    molParam = 1;
+                }
+                else if (molId == 0 || otherMolId == 0 && molId != otherMolId) {
+                    molParam = 1.666667f;
+                }
                 //compute charge pair force if necessary
                 float qj = qs[otherIdx];
-                force += chargeEval.force(dr, lenSqr, qi, qj, multiplier);
+                force += chargeEval.force(dr, lenSqr, qi, qj, multiplier, molParam);
                 computedForce = true;
             }
             if (computedForce) {
@@ -166,7 +176,8 @@ __global__ void compute_energy_iso
         int baseIdx = baseNeighlistIdx(cumulSumMaxPerBlock, warpSize);
         float4 posWhole = xs[idx];
         //int type = * (int *) &posWhole.w;
-        int type = __float_as_int(posWhole.w);
+        int type = __float_as_int(posWhole.w) & 0;
+        int molId = __float_as_int(posWhole.w) >> 16;
        // printf("type is %d\n", type);
         float qi;
         if (COMP_CHARGES) {
@@ -184,7 +195,8 @@ __global__ void compute_energy_iso
             float multiplier = multipliers[neighDist];
             uint otherIdx = otherIdxRaw & EXCL_MASK;
             float4 otherPosWhole = xs[otherIdx];
-            int otherType = __float_as_int(otherPosWhole.w);
+            int otherType = __float_as_int(otherPosWhole.w) & 0;
+            int otherMolId = __float_as_int(otherPosWhole.w) >> 16;
             float3 otherPos = make_float3(otherPosWhole);
             float3 dr = bounds.minImage(pos - otherPos);
             float lenSqr = lengthSqr(dr);

@@ -35,9 +35,6 @@ std::string Atom::getType() {
     return handles->at(type);
 }
 
-
-
-
 void export_Atom () { 
     py::class_<Atom>("Atom", py::no_init)
         .def_readonly("id", &Atom::id)
@@ -50,6 +47,7 @@ void export_Atom () {
         .def_readwrite("groupTag", &Atom::groupTag)
         .def_readwrite("mass", &Atom::mass)
         .def_readwrite("q", &Atom::q)
+        .def_readwrite("mol_id", &Atom::mol_id)
         .add_property("type", &Atom::getType)
         .def("kinetic", &Atom::kinetic)
         .def_readwrite("isChanged", &Atom::isChanged)

@@ -9,12 +9,11 @@ class ChargeEvaluatorDH {
         float lambdai;
         float epsi;
         float qqr_to_eng;
-        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier) {
-            if(fabs(qi) != fabs(qj)) {qi = qi*5/3;}
+        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier, float molParam) {
             float r2inv = 1.0f/lenSqr;
             float rinv = sqrtf(r2inv);
             float len = sqrtf(lenSqr);
-            float forceScalar = qqr_to_eng*qi*qj*epsi*expf(-len*lambdai)*r2inv*(rinv+lambdai) * multiplier;
+            float forceScalar = qqr_to_eng*qi*qj*epsi*expf(-len*lambdai)*r2inv*(rinv+lambdai) * multiplier * molParam;
             //if(forceScalar != 0) { printf("force is this %f\n", forceScalar);}
             return dr * forceScalar;
         }

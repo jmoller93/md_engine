@@ -23,15 +23,16 @@ public:
     double q;
     int type;  
     int id;
-    uint32_t groupTag;
+    uint16_t groupTag;
+    uint16_t mol_id;
     bool isChanged;
     std::vector<std::string> *handles;
 
     Atom (std::vector<std::string> *handles_) 
-        : mass(0), type(-1), id(-1), handles(handles_)
+        : mass(0), type(-1), id(-1), mol_id(-1), handles(handles_)
     {};
-    Atom(Vector pos_, int type_, int id_, double mass_, double q_, std::vector<std::string> *handles_)
-        : pos(pos_), mass(mass_), q(q_), type(type_), id(id_), groupTag(1), handles(handles_)
+    Atom(Vector pos_, int type_, int id_, int mol_id_, double mass_, double q_, std::vector<std::string> *handles_)
+        : pos(pos_), mass(mass_), q(q_), type(type_), id(id_), mol_id(mol_id_), groupTag(1), handles(handles_)
     {   }
 
     bool operator==(const Atom &other) {

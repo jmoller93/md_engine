@@ -177,6 +177,7 @@ public:
     //ExclusionList exclusionList;
     GPUArrayDeviceGlobal<int> exclusionIndexes; //!< List of exclusion indices
     GPUArrayDeviceGlobal<uint> exclusionIds;    //!< List of excluded atom IDs
+    GPUArrayDeviceGlobal<uint> exclusionIds_global;    //!< List of excluded atom IDs
     int maxExclusionsPerAtom;           //!< Maximum number of exclusions for a
                                         //!< single atom
     int numChecksSinceLastBuild;        //!< Number of calls to

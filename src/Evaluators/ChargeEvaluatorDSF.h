@@ -8,7 +8,7 @@ class ChargeEvaluatorDSF {
         float A;
         float shift;
         float qqr_to_eng;
-        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier) {
+        inline __device__ float3 force(float3 dr, float lenSqr, float qi, float qj, float multiplier, float molParam) {
             float r2inv = 1.0f/lenSqr;
             float rinv = sqrtf(r2inv);
             float len = sqrtf(lenSqr);
