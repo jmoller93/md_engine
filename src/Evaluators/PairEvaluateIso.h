@@ -104,11 +104,12 @@ __global__ void compute_force_iso
             if (COMP_CHARGES && lenSqr < qCutoffSqr) {
                 float molParam = 0;
                 if(molId > 0 && otherMolId > 0 && molId != otherMolId) {
-                    molParam = 1;
+                    molParam = 1.0f;
                 }
                 else if (molId == 0 || otherMolId == 0 && molId != otherMolId) {
                     molParam = 1.666667f;
                 }
+                //printf("atom type is %d molId is %d otherMolId is %d molParam is %f\n",type, molId, otherMolId, molParam);
                 //compute charge pair force if necessary
                 float qj = qs[otherIdx];
                 force += chargeEval.force(dr, lenSqr, qi, qj, multiplier, molParam);
