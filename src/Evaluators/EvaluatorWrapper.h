@@ -58,11 +58,11 @@ boost::shared_ptr<EvaluatorWrapper> pickEvaluator_CHARGE(PAIR_EVAL pairEval, Fix
     } else if (chargeFix->type == chargePairDSFType) {
         FixChargePairDSF *f = dynamic_cast<FixChargePairDSF *>(chargeFix);
         ChargeEvaluatorDSF chargeEval = f->generateEvaluator();
-        return boost::shared_ptr<EvaluatorWrapper> (dynamic_cast<EvaluatorWrapper *>(new EvaluatorWrapperImplement<PAIR_EVAL, N_PARAM, ChargeEvaluatorDSF, true>(pairEval, chargeEval)));
+        return boost::shared_ptr<EvaluatorWrapper> (dynamic_cast<EvaluatorWrapper *>(new EvaluatorWrapperImplement<PAIR_EVAL, COMP_PAIRS, N_PARAM, ChargeEvaluatorDSF, true>(pairEval, chargeEval)));
     } else if (chargeFix->type == chargePairDHType) {
         FixChargePairDH *f = dynamic_cast<FixChargePairDH *>(chargeFix);
         ChargeEvaluatorDH chargeEval = f->generateEvaluator();
-        return boost::shared_ptr<EvaluatorWrapper> (dynamic_cast<EvaluatorWrapper *>(new EvaluatorWrapperImplement<PAIR_EVAL, N_PARAM, ChargeEvaluatorDH, true>(pairEval, chargeEval)));
+        return boost::shared_ptr<EvaluatorWrapper> (dynamic_cast<EvaluatorWrapper *>(new EvaluatorWrapperImplement<PAIR_EVAL, COMP_PAIRS, N_PARAM, ChargeEvaluatorDH, true>(pairEval, chargeEval)));
     }
     assert(false);
     return boost::shared_ptr<EvaluatorWrapper>(nullptr);

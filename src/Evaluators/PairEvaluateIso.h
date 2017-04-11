@@ -57,8 +57,8 @@ __global__ void compute_force_iso
         }
         float4 posWhole = xs[idx];
         //unpack the w term to check molecule ids
-        int type = __float_as_int(posWhole.w) & 0;
-        int molId = __float_as_int(posWhole.w) >> 16;
+        int type = __float_as_int(posWhole.w) >> 0 & 0xFF;
+        int molId = __float_as_int(posWhole.w) >> 16 & 0xFF;
         float3 pos = make_float3(posWhole);
 
         float3 forceSum = make_float3(0, 0, 0);
@@ -76,8 +76,8 @@ __global__ void compute_force_iso
             uint otherIdx = otherIdxRaw & EXCL_MASK;
             float4 otherPosWhole = xs[otherIdx];
             //type is stored in w component of position
-            int otherType = __float_as_int(otherPosWhole.w) & 0;
-            int otherMolId = __float_as_int(otherPosWhole.w) >> 16;
+            int otherType = __float_as_int(otherPosWhole.w) >> 0 & 0xFF;
+            int otherMolId = __float_as_int(otherPosWhole.w) >> 16 & 0xFF;
             float3 otherPos = make_float3(otherPosWhole);
 
             //based on the two atoms types, which index in each of the square matrices will I need to load from?
@@ -177,8 +177,8 @@ __global__ void compute_energy_iso
         int baseIdx = baseNeighlistIdx(cumulSumMaxPerBlock, warpSize);
         float4 posWhole = xs[idx];
         //int type = * (int *) &posWhole.w;
-        int type = __float_as_int(posWhole.w) & 0;
-        int molId = __float_as_int(posWhole.w) >> 16;
+        int type = __float_as_int(posWhole.w) >> 0 & 0xFF;
+        int molId = __float_as_int(posWhole.w) >> 16 & 0xFF;
        // printf("type is %d\n", type);
         float qi;
         if (COMP_CHARGES) {
@@ -196,8 +196,8 @@ __global__ void compute_energy_iso
             float multiplier = multipliers[neighDist];
             uint otherIdx = otherIdxRaw & EXCL_MASK;
             float4 otherPosWhole = xs[otherIdx];
-            int otherType = __float_as_int(otherPosWhole.w) & 0;
-            int otherMolId = __float_as_int(otherPosWhole.w) >> 16;
+            int otherType = __float_as_int(otherPosWhole.w) >> 0 & 0xFF;
+            int otherMolId = __float_as_int(otherPosWhole.w) >> 16 & 0xFF;
             float3 otherPos = make_float3(otherPosWhole);
             float3 dr = bounds.minImage(pos - otherPos);
             float lenSqr = lengthSqr(dr);

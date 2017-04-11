@@ -10,12 +10,22 @@
 #include <array>
 class BasePair3SPN2;
 void export_BasePairs();
+
 class BasePair{
     public:
         //going to try storing by id instead.  Makes preparing for a run less intensive
         std::array<int, 4> ids;
         int type;
         void takeIds(BasePair *);
+};
+
+class BasePairGPU {
+    public:
+        int ids[4];
+        uint32_t type;
+        void takeIds(BasePair *);
+
+
 };
 
 class BasePair3SPN2Type {
@@ -39,14 +49,6 @@ class BasePair3SPN2 : public BasePair, public BasePair3SPN2Type {
 	std::string getInfoString();
 };
 
-class BasePairGPU {
-    public:
-        int ids[4];
-        uint32_t type;
-        void takeIds(BasePair *);
-
-
-};
 
 namespace std {
     template<> struct hash<BasePair3SPN2Type> {

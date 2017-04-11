@@ -4,6 +4,19 @@
 #include "array_indexing_suite.hpp"
 namespace py = boost::python;
 
+void BasePair::takeIds(BasePair *other) {
+    for (int i=0; i<4; i++) {
+        ids[i] = other->ids[i];
+    }
+}
+
+
+void BasePairGPU::takeIds(BasePair *other) {
+    for (int i=0; i<4; i++) {
+        ids[i] = other->ids[i];
+    }
+}
+
 //3SPN.2 Base Pairs as a four atom bonded potential
 BasePair3SPN2::BasePair3SPN2(Atom *a, Atom *b, Atom *c, Atom *d, double phi0_, double sigma_, double epsi_, double theta1_, double theta2_, int type_) {
     ids[0] = a->id;
@@ -29,19 +42,6 @@ BasePair3SPN2::BasePair3SPN2(double phi0_, double sigma_, double epsi_,  double 
     theta1 = theta1_;
     theta2 = theta2_;
     type = type_;
-}
-
-void BasePair::takeIds(BasePair *other) {
-    for (int i=0; i<4; i++) {
-        ids[i] = other->ids[i];
-    }
-}
-
-
-void BasePairGPU::takeIds(BasePair *other) {
-    for (int i=0; i<4; i++) {
-        ids[i] = other->ids[i];
-    }
 }
 
 BasePair3SPN2Type::BasePair3SPN2Type(BasePair3SPN2 *basepair) {

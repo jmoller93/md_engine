@@ -105,48 +105,73 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
 
         //printf("no force\n");
         float dPotential = -1.0f * evaluator.dPotential(dihedralType, phi);
-        float sinPhi = sinf(phi);
-        float absSinPhi = sinPhi < 0 ? -sinPhi : sinPhi;
-        if (absSinPhi < 0.01f) {
-            sinPhi = 0.01f;
-        }
-        dPotential /= sinPhi;
+
+        float3 dVector;
+        dVector.x = -directors[2].y*directors[1].z + directors[2].z*directors[1].y;
+        dVector.y = -directors[2].z*directors[1].x + directors[2].x*directors[1].z;
+        dVector.z = -directors[2].x*directors[1].y + directors[2].y*directors[1].x;
+        dVector *= invMagProds[1];
+        cVector *= invMagProds[0];
+
         float3 forces[4];
 
-        c *= dPotential;
-        scValues[2] *= dPotential;
-        float a11 = c * invLenSqrs[0] * scValues[0];
-        float a22 = -invLenSqrs[1] * (2.0f*c0*scValues[2] - c*(scValues[0]+scValues[1]));
-        float a33 = c*invLenSqrs[2]*scValues[1];
-        float a12 = -invMagProds[0] * (c12Mags[0] * c * scValues[0] + c12Mags[1] * scValues[2]);
-        float a13 = -invLens[0] * invLens[2] * scValues[2];
-        float a23 = invMagProds[1] * (c12Mags[1]*c*scValues[1] + c12Mags[0]*scValues[2]);
-        float3 sFloat3 = make_float3(
-                                     a12*directors[0].x + a22*directors[1].x + a23*directors[2].x
-                                     ,  a12*directors[0].y + a22*directors[1].y + a23*directors[2].y
-                                     ,  a12*directors[0].z + a22*directors[1].z + a23*directors[2].z
-                                    );
-        //printf("ssomething valyes %f %f %f\n", sFloat3.x, sFloat3.y, sFloat3.z);
-        //printf("comps %f %f %f %f %f %f\n", a12, directors[0].x,  a22, directors[1].x,  a23, directors[2].x);
-        float3 a11Dir1 = directors[0] * a11;
-        float3 a12Dir2 = directors[1] * a12;
-        float3 a13Dir3 = directors[2] * a13;
-        forces[0].x = a11Dir1.x + a12Dir2.x + a13Dir3.x;
-        forces[0].y = a11Dir1.y + a12Dir2.y + a13Dir3.y;
-        forces[0].z = a11Dir1.z + a12Dir2.z + a13Dir3.z;
-        forces[1] = -sFloat3 - forces[0];
+        float fra1 = -dPotential * invLens[0] * scValues[0];
+        forces[0] = fra1 * cVector;
 
-        //if(dPotential > 100) {
-        //    printf("Force is large!!!! %f\tPhi is %f\t force is %f\t%f\t%f\n",dPotential,phi*180.0f/M_PI,forces[0].x,forces[0].y,forces[0].z);
+        float frb1 = dPotential * (length(directors[1]) - length(directors[0]) * c12Mags[0]) * invLens[0] * invLens[1] * scValues[0];
+        float frb2 = dPotential * c12Mags[1] * invLens[1] * scValues[1];
+        forces[1] = (frb1 * cVector + frb2 * dVector);
+
+        float frc1 = dPotential * (length(directors[1]) - length(directors[2]) * c12Mags[1]) * invLens[2] * invLens[1] * scValues[1];
+        float frc2 = dPotential * c12Mags[0] * invLens[1] * scValues[0];
+        forces[2] = (frc1 * dVector + frc2 * cVector);
+
+        float frd1 = -dPotential * invLens[2] * scValues[1];
+        forces[3] = frd1 * dVector;
+
+
+        //float sinPhi = sinf(phi);
+        //float absSinPhi = sinPhi < 0 ? -sinPhi : sinPhi;
+        //if (absSinPhi < 0.02f) {
+        //    sinPhi = 0.02f;
         //}
+        //dPotential /= sinPhi;
+        //float3 forces[4];
 
-        float3 a13Dir1 = directors[0] * a13;
-        float3 a23Dir2 = directors[1] * a23;
-        float3 a33Dir3 = directors[2] * a33;
-        forces[3].x = a13Dir1.x + a23Dir2.x + a33Dir3.x;
-        forces[3].y = a13Dir1.y + a23Dir2.y + a33Dir3.y;
-        forces[3].z = a13Dir1.z + a23Dir2.z + a33Dir3.z;
-        forces[2] = sFloat3 - forces[3];
+        //c *= dPotential;
+        //scValues[2] *= dPotential;
+        //float a11 = c * invLenSqrs[0] * scValues[0];
+        //float a22 = -invLenSqrs[1] * (2.0f*c0*scValues[2] - c*(scValues[0]+scValues[1]));
+        //float a33 = c*invLenSqrs[2]*scValues[1];
+        //float a12 = -invMagProds[0] * (c12Mags[0] * c * scValues[0] + c12Mags[1] * scValues[2]);
+        //float a13 = -invLens[0] * invLens[2] * scValues[2];
+        //float a23 = invMagProds[1] * (c12Mags[1]*c*scValues[1] + c12Mags[0]*scValues[2]);
+        //float3 sFloat3 = make_float3(
+        //                             a12*directors[0].x + a22*directors[1].x + a23*directors[2].x
+        //                             ,  a12*directors[0].y + a22*directors[1].y + a23*directors[2].y
+        //                             ,  a12*directors[0].z + a22*directors[1].z + a23*directors[2].z
+        //                            );
+        ////printf("ssomething valyes %f %f %f\n", sFloat3.x, sFloat3.y, sFloat3.z);
+        ////printf("comps %f %f %f %f %f %f\n", a12, directors[0].x,  a22, directors[1].x,  a23, directors[2].x);
+        //float3 a11Dir1 = directors[0] * a11;
+        //float3 a12Dir2 = directors[1] * a12;
+        //float3 a13Dir3 = directors[2] * a13;
+        //forces[0].x = a11Dir1.x + a12Dir2.x + a13Dir3.x;
+        //forces[0].y = a11Dir1.y + a12Dir2.y + a13Dir3.y;
+        //forces[0].z = a11Dir1.z + a12Dir2.z + a13Dir3.z;
+        //forces[1] = -sFloat3 - forces[0];
+
+        ////if(dPotential > 100) {
+        ////    printf("Force is large!!!! %f\tPhi is %f\t force is %f\t%f\t%f\n",dPotential,phi*180.0f/M_PI,forces[0].x,forces[0].y,forces[0].z);
+        ////}
+
+        //float3 a13Dir1 = directors[0] * a13;
+        //float3 a23Dir2 = directors[1] * a23;
+        //float3 a33Dir3 = directors[2] * a33;
+        //forces[3].x = a13Dir1.x + a23Dir2.x + a33Dir3.x;
+        //forces[3].y = a13Dir1.y + a23Dir2.y + a33Dir3.y;
+        //forces[3].z = a13Dir1.z + a23Dir2.z + a33Dir3.z;
+        //forces[2] = sFloat3 - forces[3];
         //printf("phi is %f\n", phi);
         for (int i=0; i<4; i++) {
             atomicAdd(&(fs[idxs[i]].x), (forces[i].x));
@@ -154,6 +179,7 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
             atomicAdd(&(fs[idxs[i]].z), (forces[i].z));
             if(forces[i].x > 300 || forces[i].y > 300 || forces[i].z > 300) {
                 printf("phi %f\tf %d is %f %f %f\n", phi*180.0f/M_PI, i, forces[i].x, forces[i].y, forces[i].z);
+                printf("ids are  %d\n", dihedral.ids[i]);
             }
         }
 

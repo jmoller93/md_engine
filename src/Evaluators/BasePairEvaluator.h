@@ -47,6 +47,7 @@ public:
             //printf("force 3: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
         }
 
+        //This section 100% matches
         if ((dTheta1 >= (cone*-0.5f)) && (dTheta1 <= (cone*0.5f))) {
             if ((dTheta2 >= (cone*-0.5f)) && (dTheta2 <= (cone*0.5f))) {
 
@@ -56,30 +57,18 @@ public:
 
                 float fra1 = -ftor * invLens[0] * scValues[0] * energyMors;
                 forces[0] += fra1 * cVector;
-                //forces[0].x += fra1 * cVector.x;
-                //forces[0].y += fra1 * cVector.y;
-                //forces[0].z += fra1 * cVector.z;
 
                 //I may want to store the lengths instead of continuously calculating them
                 float frb1 = ftor * (length(directors[1]) - length(directors[0])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * energyMors;
                 float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * energyMors;
                 forces[1] += (frb1 * cVector + frb2  * dVector) - forceMors * phiFactor * directors[1];
-                //forces[1].x += (frb1 * cVector.x + frb2 * dVector.x) - forceMors * phiFactor * directors[1].x;
-                //forces[1].y += (frb1 * cVector.y + frb2 * dVector.y) - forceMors * phiFactor * directors[1].y;
-                //forces[1].z += (frb1 * cVector.z + frb2 * dVector.z) - forceMors * phiFactor * directors[1].z;
 
                 float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[1] * energyMors;
                 float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * energyMors;
                 forces[3] += (frc1 * dVector + frc2 * cVector) + forceMors * phiFactor * directors[1];
-                //forces[3].x += (frc1 * dVector.x + frc2 * cVector.x) + forceMors * phiFactor * directors[1].x;
-                //forces[3].y += (frc1 * dVector.y + frc2 * cVector.y) + forceMors * phiFactor * directors[1].y;
-                //forces[3].z += (frc1 * dVector.z + frc2 * cVector.z) + forceMors * phiFactor * directors[1].z;
 
                 float frd1 = -ftor * invLens[2] * scValues[1] * energyMors;
                 forces[2] += frd1 * dVector;
-                //forces[2].x += frd1 * dVector.x;
-                //forces[2].y += frd1 * dVector.y;
-                //forces[2].z += frd1 * dVector.z;
 
                 //printf("force site a: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
                 //printf("force site b: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
@@ -147,12 +136,14 @@ public:
         }
 
         //Modulated theta1
+        //Confident in this
         else if (((dTheta1 >= (cone * 0.5f)) && (dTheta1 <= cone)) || ((dTheta1 <= (-cone*0.5)) && (dTheta1 >= (cone*-1.0f)))) {
             float cosine = cosf(range*dTheta1);
             float sine = sinf(range*dTheta1);
             float hbon_cosine = 1.0f - cosine * cosine;
     
             //Full potential for theta2 and modulated theta1
+            //This section 100% matches
             if ((dTheta2 >= (-cone*0.5f)) && (dTheta2 <= (cone*0.5f))) {
                 energyMors = morsAttrEnrgy(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
                 forceMors = morsAttrForc(invLens[1], alpha, basepairType.epsi, basepairType.sigma);
@@ -164,65 +155,35 @@ public:
                 float3 fr1;
                 fr1 = prefactor * (invLens[0] * (c12Mags[0] * directors[0] * invLens[0] + directors[1] * invLens[1])) * energyMors;
                 forces[0] += fr1 * phiFactor;
-                //fr1.x = prefactor * (invLens[0] * (c12Mags[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors;
-                //fr1.y = prefactor * (invLens[0] * (c12Mags[0] * directors[0].y * invLens[0] + directors[1].y * invLens[1])) * energyMors;
-                //fr1.z = prefactor * (invLens[0] * (c12Mags[0] * directors[0].z * invLens[0] + directors[1].z * invLens[1])) * energyMors;
-                //forces[0].x += fr1.x * phiFactor;
-                //forces[0].y += fr1.y * phiFactor;
-                //forces[0].z += fr1.z * phiFactor;
 
                 //Site b forces
                 float3 fr2;
                 fr2 = prefactor * (invLens[0] * (-directors[1] * invLens[1] - c12Mags[0] * directors[0] * invLens[0]) + invLens[1] * (directors[0] * invLens[0] + c12Mags[0] * directors[1] * invLens[1])) * energyMors - hbon_cosine * directors[1] * forceMors;
                 forces[1] += fr2 * phiFactor;
-                //fr2.x = prefactor * (invLens[0] * (-directors[1].x * invLens[1] - c12Mags[0] * directors[0].x * invLens[0]) + invLens[1] * (directors[0].x * invLens[0]+ c12Mags[0] * directors[1].x * invLens[1])) * energyMors - hbon_cosine * directors[1].x * forceMors;
-                //fr2.y = prefactor * (invLens[0] * (-directors[1].y * invLens[1] - c12Mags[0] * directors[0].y * invLens[0]) + invLens[1] * (directors[0].y * invLens[0]+ c12Mags[0] * directors[1].y * invLens[1])) * energyMors - hbon_cosine * directors[1].y * forceMors;
-                //fr2.z = prefactor * (invLens[0] * (-directors[1].z * invLens[1] - c12Mags[0] * directors[0].z * invLens[0]) + invLens[1] * (directors[0].z * invLens[0]+ c12Mags[0] * directors[1].z * invLens[1])) * energyMors - hbon_cosine * directors[1].z * forceMors;
-                //forces[1].x += fr2.x * phiFactor;
-                //forces[1].y += fr2.y * phiFactor;
-                //forces[1].z += fr2.z * phiFactor;
 
                 //Site d forces
                 float3 fr3;
                 fr3 = prefactor * (invLens[1] * (-directors[1] * invLens[1] * c12Mags[0] - directors[0] * invLens[0])) * energyMors + hbon_cosine * directors[1] * forceMors;
                 forces[3] += fr3 * phiFactor;
-                //fr3.x = prefactor * (invLens[1] * (-directors[1].x * invLens[1] * c12Mags[0] - directors[0].x * invLens[0])) * energyMors + hbon_cosine * directors[1].x * forceMors;
-                //fr3.y = prefactor * (invLens[1] * (-directors[1].y * invLens[1] * c12Mags[0] - directors[0].y * invLens[0])) * energyMors + hbon_cosine * directors[1].y * forceMors;
-                //fr3.z = prefactor * (invLens[1] * (-directors[1].z * invLens[1] * c12Mags[0] - directors[0].z * invLens[0])) * energyMors + hbon_cosine * directors[1].z * forceMors;
-                //forces[3].x += fr3.x * phiFactor;
-                //forces[3].y += fr3.y * phiFactor;
-                //forces[3].z += fr3.z * phiFactor;
 
                 float first_term = energyMors * hbon_cosine;
 
                 //Sitea part 2
                 float fra1 = -ftor * invLens[0] * scValues[0] * first_term;
                 forces[0] += fra1 * cVector;
-                //forces[0].x += fra1 * cVector.x;
-                //forces[0].y += fra1 * cVector.y;
-                //forces[0].z += fra1 * cVector.z;
 
                 //I may want to store the lengths instead of continuously calculating them
                 float frb1 = ftor * (length(directors[1]) - length(directors[0])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * first_term;
                 float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * first_term;
                 forces[1] += (frb1 * cVector + frb2 * dVector);
-                //forces[1].x += (frb1 * cVector.x + frb2 * dVector.x);
-                //forces[1].y += (frb1 * cVector.y + frb2 * dVector.y);
-                //forces[1].z += (frb1 * cVector.z + frb2 * dVector.z);
 
                 //site d part 2.....or 3
                 float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[1] * first_term;
                 float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * first_term;
                 forces[3] += (frc1 * dVector + frc2 * cVector);
-                //forces[3].x += (frc1 * dVector.x + frc2 * cVector.x);
-                //forces[3].y += (frc1 * dVector.y + frc2 * cVector.y);
-                //forces[3].z += (frc1 * dVector.z + frc2 * cVector.z);
                 
                 float frd1 = -ftor * invLens[2] * scValues[1] * first_term;
                 forces[2] += frd1 * dVector;
-                //forces[2].x += frd1 * dVector.x;
-                //forces[2].y += frd1 * dVector.y;
-                //forces[2].z += frd1 * dVector.z;
 
                 //printf("force site arr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
                 //printf("force site brr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
@@ -241,69 +202,49 @@ public:
                 //printf("length is %f\t force is %f\t energy is %f\t sigma is %f\t alpha is %f\n",1.0f/invLenSqrs[1],forceMors,energyMors,basepairType.sigma, alpha);
                 float prefactor2 = 2.0f * range * cosine2 * sine2 * 1.0f / sqrtf(1.0f - c12Mags[1] * c12Mags[1]);
                 float prefactor  = 2.0f * range * cosine  * sine  * 1.0f / sqrtf(1.0f - c12Mags[0] * c12Mags[0]);
+                //printf("prefactor is %f prefactor2 is %f cosine2 is %f cosine is %f\n",prefactor,prefactor2,cosine2,cosine);
 
                 //Site a for like the 4th time
                 float3 fr1;
-                fr1.x = prefactor * (invLens[0] * (c12Mags[0] * directors[0].x * invLens[0] + directors[1].x * invLens[1])) * energyMors * hbon_cosine2;
-                fr1.y = prefactor * (invLens[0] * (c12Mags[0] * directors[0].y * invLens[0] + directors[1].y * invLens[1])) * energyMors * hbon_cosine2;
-                fr1.z = prefactor * (invLens[0] * (c12Mags[0] * directors[0].z * invLens[0] + directors[1].z * invLens[1])) * energyMors * hbon_cosine2;
-                forces[0].x += fr1.x * phiFactor;
-                forces[0].y += fr1.y * phiFactor;
-                forces[0].z += fr1.z * phiFactor;
+                fr1 = prefactor * (invLens[0] * (c12Mags[0] * directors[0] * invLens[0] + directors[1] * invLens[1])) * energyMors * hbon_cosine2;
+                forces[0] += fr1 * phiFactor;
                
                 //Site b
                 float3 fr2;
-                fr2.x = prefactor * (invLens[0] * (-directors[1].x * invLens[1] - c12Mags[0] * directors[0].x * invLens[0]) + invLens[1] * (directors[0].x * invLens[0] + c12Mags[0] * directors[1].x * invLens[1])) * energyMors * hbon_cosine2 + prefactor2 * (invLens[1] * (c12Mags[1] * directors[1].x * invLens[1] - directors[2].x * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1].x * forceMors; 
-                fr2.y = prefactor * (invLens[0] * (-directors[1].y * invLens[1] - c12Mags[0] * directors[0].y * invLens[0]) + invLens[1] * (directors[0].y * invLens[0] + c12Mags[0] * directors[1].y * invLens[1])) * energyMors * hbon_cosine2 + prefactor2 * (invLens[1] * (c12Mags[1] * directors[1].y * invLens[1] - directors[2].y * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1].y * forceMors; 
-                fr2.z = prefactor * (invLens[0] * (-directors[1].z * invLens[1] - c12Mags[0] * directors[0].z * invLens[0]) + invLens[1] * (directors[0].z * invLens[0] + c12Mags[0] * directors[1].z * invLens[1])) * energyMors * hbon_cosine2 + prefactor2 * (invLens[1] * (c12Mags[1] * directors[1].z * invLens[1] - directors[2].z * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1].z * forceMors; 
-                forces[1].x += fr2.x * phiFactor;
-                forces[1].y += fr2.y * phiFactor;
-                forces[1].z += fr2.z * phiFactor;
+                fr2 = prefactor * (invLens[0] * (-directors[1] * invLens[1] - c12Mags[0] * directors[0] * invLens[0]) + invLens[1] * (directors[0] * invLens[0] + c12Mags[0] * directors[1] * invLens[1])) * energyMors * hbon_cosine2 + prefactor2 * (invLens[1] * (c12Mags[1] * directors[1] * invLens[1] - directors[2] * invLens[2])) * hbon_cosine * energyMors - hbon_cosine * hbon_cosine2 * directors[1] * forceMors;
+                forces[1] += fr2 * phiFactor;
            
                 //site c
                 float3 fr3;
-                fr3.x = prefactor2 * (invLens[2] * (directors[2].x * invLens[2] * c12Mags[1] - directors[1].x * invLens[1])) * energyMors * hbon_cosine;
-                fr3.y = prefactor2 * (invLens[2] * (directors[2].y * invLens[2] * c12Mags[1] - directors[1].y * invLens[1])) * energyMors * hbon_cosine;
-                fr3.z = prefactor2 * (invLens[2] * (directors[2].z * invLens[2] * c12Mags[1] - directors[1].z * invLens[1])) * energyMors * hbon_cosine;
-                forces[2].x += fr3.x * phiFactor;
-                forces[2].y += fr3.y * phiFactor;
-                forces[2].z += fr3.z * phiFactor;
+                fr3 = prefactor2 * (invLens[2] * (directors[2] * invLens[2] * c12Mags[1] - directors[1] * invLens[1])) * energyMors * hbon_cosine;
+                forces[2] += fr3 * phiFactor;
 
                 //Site d
                 float3 fr4;
-                fr4.x = prefactor2 * (invLens[2] * (directors[1].x * invLens[1] - c12Mags[1] * directors[2].x * invLens[2]) + invLens[1] * (directors[2].x * invLens[2] - c12Mags[1] * directors[1].x * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (- c12Mags[0] * directors[1].x * invLens[1] - directors[0].x * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1].x * forceMors; 
-                fr4.y = prefactor2 * (invLens[2] * (directors[1].y * invLens[1] - c12Mags[1] * directors[2].y * invLens[2]) + invLens[1] * (directors[2].y * invLens[2] - c12Mags[1] * directors[1].y * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (- c12Mags[0] * directors[1].y * invLens[1] - directors[0].y * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1].y * forceMors; 
-                fr4.z = prefactor2 * (invLens[2] * (directors[1].z * invLens[1] - c12Mags[1] * directors[2].z * invLens[2]) + invLens[1] * (directors[2].z * invLens[2] - c12Mags[1] * directors[1].z * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (- c12Mags[0] * directors[1].z * invLens[1] - directors[0].z * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1].z * forceMors; 
-                forces[3].x += fr4.x * phiFactor;
-                forces[3].y += fr4.y * phiFactor;
-                forces[3].z += fr4.z * phiFactor;
+                fr4 = prefactor2 * (invLens[2] * (directors[1] * invLens[1] - c12Mags[1] * directors[2] * invLens[2]) + invLens[1] * (directors[2] * invLens[2] - c12Mags[1] * directors[1] * invLens[1])) * energyMors * hbon_cosine + prefactor * (invLens[1] * (-c12Mags[0] * directors[1] * invLens[1] - directors[0] * invLens[0])) * hbon_cosine2 * energyMors + hbon_cosine * hbon_cosine2 * directors[1] * forceMors;
+                forces[3] += fr4 * phiFactor;
+
+                //printf("fr1.x is %f fr2.x is %f fr3.y is %f fr4.z is %f ftor is %f\n",fr1.x,fr2.x,fr3.y,fr4.z,ftor);
 
                 float first_term = energyMors * hbon_cosine * hbon_cosine2;
+
                 //This is mostly copied from Dan Hinckley
                 float fra1 = -ftor * invLens[0] * scValues[0] * first_term;
-                forces[0].x += fra1 * cVector.x;
-                forces[0].y += fra1 * cVector.y;
-                forces[0].z += fra1 * cVector.z;
+                forces[0] += fra1 * cVector;
 
                 //Site b forces
                 float frb1 = ftor * (length(directors[1]) - length(directors[0])*c12Mags[0]) * invLens[0] * invLens[1] * scValues[0] * first_term;
                 float frb2 = ftor * c12Mags[1] * invLens[1] * scValues[1] * first_term;
-                forces[1].x += (frb1 * cVector.x + frb2 * dVector.x);
-                forces[1].y += (frb1 * cVector.y + frb2 * dVector.y);
-                forces[1].z += (frb1 * cVector.z + frb2 * dVector.z);
+                forces[1] += (frb1 * cVector + frb2 * dVector);
 
                 //Site d
                 float frc1 = ftor * (length(directors[1]) - length(directors[2])*c12Mags[1]) * invLens[2] * invLens[1] * scValues[1] * first_term;
                 float frc2 = ftor * c12Mags[0] * invLens[1] * scValues[0] * first_term;
-                forces[3].x += (frc1 * dVector.x + frc2 * cVector.x);
-                forces[3].y += (frc1 * dVector.y + frc2 * cVector.y);
-                forces[3].z += (frc1 * dVector.z + frc2 * cVector.z);
+                forces[3] += (frc1 * dVector + frc2 * cVector);
                
                 //Site c
                 float frd1 = -ftor * invLens[2] * scValues[1] * first_term;
-                forces[2].x += frd1 * dVector.x;
-                forces[2].y += frd1 * dVector.y;
-                forces[2].z += frd1 * dVector.z;
+                forces[2] += frd1 * dVector;
 
                 //printf("force site arrr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
                 //printf("force site brrr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);

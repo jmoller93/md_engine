@@ -33,7 +33,7 @@ void FixWCA::compute(bool computeVirials) {
     evalWrap->compute(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx),
                       neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                       state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU,
-                      neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],gpd.virials.d_data.data(), gpd.qs(activeIdx), chargeRCut, computeVirials);
+                      neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), chargeRCut, computeVirials);
 
 
 
@@ -48,7 +48,7 @@ void FixWCA::singlePointEng(float *perParticleEng) {
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     float *neighborCoefs = state->specialNeighborCoefs;
 
-    evalWrap->energy(nAtoms, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],gpd.qs(activeIdx), chargeRCut);
+    evalWrap->energy(nAtoms, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut);
 
 
 
@@ -94,6 +94,7 @@ bool FixWCA::prepareForRun() {
 //     prepareParameters(rCutHandle, fillRCut, processRCut, true, fillRCutDiag);
     sendAllToDevice();
     setEvalWrapper();
+
     return true;
 }
 
@@ -104,11 +105,6 @@ void FixWCA::setEvalWrapper() {
 void FixWCA::setEvalWrapperOrig() {
     EvaluatorWCA eval;
     evalWrap = pickEvaluator<EvaluatorWCA, 3, true>(eval, nullptr);
-}
-
-void FixWCA::setEvalWrapperOrig() {
-    EvaluatorWCA eval;
-    evalWrap = pickEvaluator<EvaluatorWCA, 3>(eval, nullptr);
 }
 
 std::string FixWCA::restartChunk(std::string format) {

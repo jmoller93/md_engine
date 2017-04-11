@@ -64,7 +64,11 @@ __global__ void compute_force_angle(int nAtoms, float4 *xs, float4 *forces, int 
                 float3 directors[2];
                 directors[0] = positions[0] - positions[1];
                 directors[1] = positions[2] - positions[1];
-             //   printf("position Xs %f %f %f\n", positions[0].x, positions[1].x, positions[2].x);
+                /*
+                printf("position Xs %f %f %f\n", positions[0].x, positions[0].y, positions[0].z);
+                printf("position Xs %f %f %f\n", positions[1].x, positions[1].y, positions[1].z);
+                printf("position Xs %f %f %f\n", positions[2].x, positions[2].y, positions[2].z);
+                */
               //  printf("director Xs %f %f\n", directors[0].x, directors[1].x);
                 float distSqrs[2];
                 float dists[2];

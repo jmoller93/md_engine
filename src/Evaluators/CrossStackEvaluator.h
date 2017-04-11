@@ -74,6 +74,9 @@ public:
                 forces[4] += fr;
 
                 //printf("forrces and stuff is %f\n", forceMors);
+                //printf("force site a: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site b: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site e: %f\t%f\t%f\n", forces[4].x, forces[4].y, forces[4].z);
             }
             else {
                 //printf("Hallo\n");
@@ -119,6 +122,11 @@ public:
                 //Site e forces
                 fr = -basepair_term * directors[3] * forceMors;
                 forces[4] += fr;
+                //printf("force site ar: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site br: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site cr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site dr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
+                //printf("force site er: %f\t%f\t%f\n", forces[4].x, forces[4].y, forces[4].z);
                 //printf("forrrces and stuff is %f\n", forceMors);
                 //printf("dist and sigma are %f\t%f\n", 1.0f/invLens[3], crossstackType.sigma1);
             }
@@ -154,6 +162,11 @@ public:
                 fr = prefactor2 * (invLens[3] * (directors[3] * invLens[3] * c12Mags[1] - directors[0] * invLens[0])) * basepair_term * energyMors - basepair_term * cross_term * directors[3] * forceMors;
                 forces[4] += fr;
 
+                //printf("force site arr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site brr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site crr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site drr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
+                //printf("force site err: %f\t%f\t%f\n", forces[4].x, forces[4].y, forces[4].z);
                 //printf("forrrrces and stuff is %f\n", forceMors);
             }
             else {
@@ -204,6 +217,9 @@ public:
                 float3 fr3;
                 fr3 = prefactor2 * (invLens[4] * (directors[4] * invLens[4] * c12Mags[2] - directors[2] * invLens[2])) * energyMors - cross_term * directors[4] * forceMors; 
                 forces[5] += fr3;
+                //printf("force site crrr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site drrr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
+                //printf("force site frrr: %f\t%f\t%f\n", forces[5].x, forces[5].y, forces[5].z);
             }
             else {
                 //Nothing else happens here. I've cheated you. I've cheated ALL of you
@@ -279,7 +295,13 @@ public:
 
                 //Site f
                 fr = prefactor2 * (invLens[4] * (directors[4] * invLens[4] * c12Mags[2] - directors[2] * invLens[2])) * basepair_term * energyMors - basepair_term * cross_term * directors[4] * forceMors;
-                forces[4] += fr;
+                forces[5] += fr;
+
+                //printf("force site arrrr: %f\t%f\t%f\n", forces[0].x, forces[0].y, forces[0].z);
+                //printf("force site brrrr: %f\t%f\t%f\n", forces[1].x, forces[1].y, forces[1].z);
+                //printf("force site crrrr: %f\t%f\t%f\n", forces[2].x, forces[2].y, forces[2].z);
+                //printf("force site drrrr: %f\t%f\t%f\n", forces[3].x, forces[3].y, forces[3].z);
+                //printf("force site frrrr: %f\t%f\t%f\n", forces[5].x, forces[5].y, forces[5].z);
 
             }
             else {

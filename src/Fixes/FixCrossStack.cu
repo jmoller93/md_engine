@@ -29,15 +29,15 @@ bool FixCrossStack3SPN2::prepareForRun() {
 void FixCrossStack3SPN2::compute(bool computeVirials) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
-
-
+   
     GPUData &gpd = state->gpd;
-    if (computeVirials) {
-        compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
-    } else {
-        compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+    if (forcersGPU.size()) {
+        if (computeVirials) {
+            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+        } else {
+            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+        }
     }
-
 }
 
 //Define specific parameters for all base pairing interactions
@@ -46,7 +46,7 @@ void FixCrossStack3SPN2::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_crossstack<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_crossstack<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
@@ -59,10 +59,10 @@ void FixCrossStack3SPN2::createCrossStack(Atom *a, Atom *b, Atom *c, Atom *d, At
     }
     forcers.push_back(CrossStack3SPN2(a, b, c, d, e, f, sigma1, sigma2, epsi, theta1, theta2, theta3, type));
     bonds.push_back(BondHarmonic(a,e, 0.0, 0.0, type));
-    bonds.push_back(BondHarmonic(a,b, 0.0, 0.0, type));
+    //bonds.push_back(BondHarmonic(a,b, 0.0, 0.0, type));
     bonds.push_back(BondHarmonic(b,e, 0.0, 0.0, type));
     bonds.push_back(BondHarmonic(d,f, 0.0, 0.0, type));
-    bonds.push_back(BondHarmonic(d,c, 0.0, 0.0, type));
+    //bonds.push_back(BondHarmonic(d,c, 0.0, 0.0, type));
     bonds.push_back(BondHarmonic(f,c, 0.0, 0.0, type));
     pyListInterface.updateAppendedMember();
 }

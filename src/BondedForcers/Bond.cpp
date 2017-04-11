@@ -61,22 +61,24 @@ void export_BondHarmonic() {
 
 //extended harmonic bond (3SPN.2 version)
 bool BondHarmonicExtendType::operator==(const BondHarmonicExtendType &other) const {
-    return k == other.k and r0 == other.r0;
+    return k1 == other.k1 and k2 == other.k2 and r0 == other.r0;
 }
 
 
 
 
 
-BondHarmonicExtend::BondHarmonicExtend(Atom *a, Atom *b, double k_, double r0_, int type_) {
+BondHarmonicExtend::BondHarmonicExtend(Atom *a, Atom *b, double k1_, double k2_, double r0_, int type_) {
     ids[0] = a->id;
     ids[1] = b->id;
-    k = k_;
+    k1 = k1_;
+    k2 = k2_;
     r0 = r0_;
     type = type_;
 }
-BondHarmonicExtend::BondHarmonicExtend(double k_, double r0_, int type_) {
-    k = k_;
+BondHarmonicExtend::BondHarmonicExtend(double k1_, double k2_, double r0_, int type_) {
+    k1 = k1_;
+    k2 = k2_;
     r0 = r0_;
     type = type_;
 }
@@ -84,13 +86,13 @@ BondHarmonicExtend::BondHarmonicExtend(double k_, double r0_, int type_) {
 
 std::string BondHarmonicExtendType::getInfoString() {
   std::stringstream ss;
-  ss << " k='" << k << "' r0='" << r0;
+  ss << "' k1='" << k1 << "' k2='" << k2 << "' r0='" << r0;
   return ss.str();
 }
 
 std::string BondHarmonicExtend::getInfoString() {
   std::stringstream ss;
-  ss << "<member type='" << type << "' k='" << k << "' r0='" << r0 << "' atomID_a='" << ids[0] <<  "' atomID_b='" << ids[1] << "'/>\n";
+  ss << "<member type='" << type << "' k1='" <<  k1 << "' k2='" << k2 << "' r0='" << r0 << "' atomID_a='" << ids[0] <<  "' atomID_b='" << ids[1] << "'/>\n";
   return ss.str();
 }
 
@@ -99,7 +101,8 @@ void export_BondHarmonicExtend() {
     boost::python::class_<BondHarmonicExtend,SHARED(BondHarmonicExtend)> ( "BondHarmonicExtend", boost::python::init<>())
 //         .def(boost::python::init<int, int ,double, double,int>())
         .def_readonly("ids", &BondHarmonicExtend::ids)
-        .def_readwrite("k", &BondHarmonicExtend::k)
+        .def_readwrite("k1", &BondHarmonicExtend::k1)
+        .def_readwrite("k2", &BondHarmonicExtend::k2)
         .def_readwrite("r0", &BondHarmonicExtend::r0)
     ;
 }

@@ -6,6 +6,8 @@
 
 #include "boost_for_export.h"
 #include "cutils_func.h"
+#include "EvaluatorWrapper.h"
+#include "PairEvaluatorNone.h"
 // #include <cmath>
 
 namespace py=boost::python;
@@ -20,58 +22,18 @@ const std::string chargePairDHType = "ChargePairDH";
 
 
 //    compute_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), gpd.qs(activeIdx), alpha, r_cut, A, shift, state->boundsGPU, state->devManager.prop.warpSize, 0.5);// state->devManager.prop.warpSize, sigmas.getDevData(), epsilons.getDevData(), numTypes, state->rCut, state->boundsGPU, oneFourStrength);
-__global__ void compute_charge_pair_DH_cu(int nAtoms, float4 *xs, float4 *fs, uint16_t *neighborCounts, uint *neighborlist, uint32_t *cumulSumMaxPerBlock, float *qs, float lambdai, float epsi, float qqr_to_eng,  BoundsGPU bounds, int warpSize, float onetwoStr, float onethreeStr) {
 
-    float multipliers[3] = {1, onetwoStr, onethreeStr};
-    int idx = GETIDX();
-    if (idx < nAtoms) {
-        float4 posWhole = xs[idx];
-        float3 pos = make_float3(posWhole);
-
-        float3 forceSum = make_float3(0, 0, 0);
-        float qi = qs[idx];//tex2D<float>(qs, XIDX(idx, sizeof(float)), YIDX(idx, sizeof(float)));
-        printf("qs is %f\t qi is %f\n", qs[idx], qi);
-
-        //printf("start, end %d %d\n", start, end);
-        int baseIdx = baseNeighlistIdx(cumulSumMaxPerBlock, warpSize);
-        int numNeigh = neighborCounts[idx];
-        for (int i=0; i<numNeigh; i++) {
-            int nlistIdx = baseIdx + warpSize * i;
-            uint otherIdxRaw = neighborlist[nlistIdx];
-            uint neighDist = otherIdxRaw >> 30;
-            uint otherIdx = otherIdxRaw & EXCL_MASK;
-            float3 otherPos = make_float3(xs[otherIdx]);
-            //then wrap and compute forces!
-            float3 dr = bounds.minImage(pos - otherPos);
-            float lenSqr = lengthSqr(dr);
-            //   printf("dist is %f %f %f\n", dr.x, dr.y, dr.z);
-            float multiplier = multipliers[neighDist];
-            float len=sqrtf(lenSqr);
-            float qj = qs[otherIdx];
-
-            if(fabs(qi) != fabs(qj)) {qi = qi*1.6667f;}
-            float rinv = 1.0f/len;
-            float forceScalar = qqr_to_eng*qi*qj*epsi*rinv*expf(-len*lambdai)*(rinv*(rinv+lambdai)) * multiplier;
-            printf("qi %f\t qj is %f\t force is %f\t qqr is %f\n", qi,qj,forceScalar,qqr_to_eng);
-    
-            float3 forceVec = dr * forceScalar;
-            forceSum += forceVec;
-
-        }   
-        fs[idx] += forceSum; //operator for float4 + float3
-
-    }
-
-}
 FixChargePairDH::FixChargePairDH(SHARED(State) state_, string handle_, string groupHandle_) : FixCharge(state_, handle_, groupHandle_, chargePairDHType, true) {
-   setParameters(temp, ionic);
+   setParameters(temp, ionic, r_cut);
    canOffloadChargePairCalc = true;
+   setEvalWrapper();
 };
 
-void FixChargePairDH::setParameters(float temp_, float ionic_)
+void FixChargePairDH::setParameters(float temp_, float ionic_, float r_cut_)
 {
     temp = temp_;
     ionic = ionic_;
+    r_cut = r_cut_;
     
     //Charge of an electron
     double ec = 1.60217653E-19;
@@ -99,16 +61,33 @@ void FixChargePairDH::compute(bool computeVirials) {
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     float *neighborCoefs = state->specialNeighborCoefs;
-    compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), gpd.qs(activeIdx), lambdai, epsi, state->units.qqr_to_eng, state->boundsGPU, state->devManager.prop.warpSize, neighborCoefs[0], neighborCoefs[1]);// state->devManager.prop.warpSize, sigmas.getDevData(), epsilons.getDevData(), numTypes, state->rCut, state->boundsGPU, oneFourStrength);
+    evalWrap->compute(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx),
+                  neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
+                  state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU,
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, computeVirials);
   //  compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborIdxs, grid.neighborlist.tex, gpd.qs(activeIdx), alpha,r_cut, A,shift, state->boundsGPU, 0.5);
-
-
 }
-
 
 std::vector<float> FixChargePairDH::getRCuts() {
     std::vector<float> vals(1, state->rCut);
     return vals;
+}
+
+void FixChargePairDH::setEvalWrapper() {
+    if (evalWrapperMode == "offload") {
+        if (hasOffloadedChargePairCalc) {
+            evalWrap = pickEvaluator<EvaluatorNone, 1, false>(EvaluatorNone(), nullptr); //nParams arg is 1 rather than zero b/c can't have zero sized argument on device
+        } else {
+            evalWrap = pickEvaluator<EvaluatorNone, 1, false>(EvaluatorNone(), this);
+        }
+    } else if (evalWrapperMode == "self") {
+        evalWrap = pickEvaluator<EvaluatorNone, 1, false>(EvaluatorNone(), this);
+    }
+
+}
+
+ChargeEvaluatorDH FixChargePairDH::generateEvaluator() {
+    return ChargeEvaluatorDH(lambdai, epsi, state->units.qqr_to_eng);
 }
 
 void export_FixChargePairDH() {
@@ -118,7 +97,7 @@ void export_FixChargePairDH() {
             py::args("state", "handle", "groupHandle"))
     )
     .def("setParameters", &FixChargePairDH::setParameters,
-            (py::arg("temp"), py::arg("ionic"))
+            (py::arg("temp"), py::arg("ionic"), py::arg("r_cut"))
         )
     ;
 }

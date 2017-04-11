@@ -6,7 +6,6 @@
 #include "GPUArrayTex.h"
 #include "FixCharge.h"
 #include "ChargeEvaluatorDH.h"
-#include "State.h"
 
 class State;
 
@@ -22,17 +21,17 @@ private:
 protected:
     float temp;
     float ionic;
+    float r_cut;
 
 public:
     FixChargePairDH(boost::shared_ptr<State> state_,
                      std::string handle_, std::string groupHandle_);
 
     //Right now temp has to be in K and ionic has to be in M for units of params to work out
-    void setParameters(float temp_, float ionic_);
+    void setParameters(float temp_, float ionic_, float r_cut_);
     void compute(bool);
-    ChargeEvaluatorDH generateEvaluator() {
-        return ChargeEvaluatorDH(lambdai, epsi, state->units.qqr_to_eng);
-    }
+    ChargeEvaluatorDH generateEvaluator();
+    void setEvalWrapper();
     std::vector<float> getRCuts();
 
 };

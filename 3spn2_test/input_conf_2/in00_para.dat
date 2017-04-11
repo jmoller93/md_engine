@@ -11,9 +11,9 @@
 10000      :: calculation status frequency
 1                  :: number of simulation boxes
 4        ::number of molecules or site clusters per box
-520        ::number of base pairs
--2078      ::number of residues per box
-      ::number of sites per box
+623        ::number of base pairs
+4168      ::number of residues per box
+6658      ::number of sites per box
 900                :: number of allowable neighbors
 200000             :: size of output buffers [bytes]
 0                  :: random number generator seed

@@ -18,6 +18,7 @@ protected:
 public:
     //DataSet *eng;
     //DataSet *press;
+    std::vector<BondVariant> bonds;
 
     FixAngleBaseStacking(boost::shared_ptr<State> state_, std::string handle);
 
@@ -30,7 +31,9 @@ public:
     void setAngleTypeCoefs(int, double, double, double);
 
     bool readFromRestart();
-
+    virtual std::vector<BondVariant> *getBonds() {
+        return &bonds;
+    }
 };
 
 #endif

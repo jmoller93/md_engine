@@ -22,7 +22,7 @@ class Params:
             elif siteId[atom3] == 'G':
                 return [9.58,4.32,103.70]
             elif siteId[atom3] == 'C':
-                return [13.11,3.87,94.55]
+                return [13.11,3.93,94.55]
         elif siteId[atom2] == 'G':
             if siteId[atom3] == 'A':
                 return [13.76,3.51,95.45]

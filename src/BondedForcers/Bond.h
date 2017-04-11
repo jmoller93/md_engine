@@ -71,7 +71,8 @@ void export_BondHarmonic();
 //Extended series harmonic bond (3SPN.2 version)
 class BondHarmonicExtendType {
 public:
-    float k;
+    float k1;
+    float k2;
     float r0;
     BondHarmonicExtendType(){};
     bool operator==(const BondHarmonicExtendType &) const;
@@ -83,7 +84,8 @@ namespace std {
     template<> struct hash<BondHarmonicExtendType> {
         size_t operator() (BondHarmonicExtendType const& bond) const {
             size_t seed = 0;
-            boost::hash_combine(seed, bond.k);
+            boost::hash_combine(seed, bond.k1);
+            boost::hash_combine(seed, bond.k2);
             boost::hash_combine(seed, bond.r0);
             return seed;
         }
@@ -92,8 +94,8 @@ namespace std {
 
 class BondHarmonicExtend : public Bond, public BondHarmonicExtendType {
 	public:
-        BondHarmonicExtend(Atom *a, Atom *b, double k_, double r0_, int type_=-1);
-        BondHarmonicExtend(double k_, double r0_, int type_=-1); //is this constructor used?
+        BondHarmonicExtend(Atom *a, Atom *b, double k1_, double k2_, double r0_, int type_=-1);
+        BondHarmonicExtend(double k1_, double k2_, double r0_, int type_=-1); //is this constructor used?
         BondHarmonicExtend(){};
         int type;
 	std::string getInfoString();

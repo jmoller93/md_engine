@@ -34,7 +34,6 @@ public:
             //Use a purely repulsive Morse potential
             float argu = alpha * (r2 - angleType.sigma);
             fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
-            //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
             if (myIdxInAngle == 1) {
                 frepul -= fmorse * directors[1];
             }
@@ -43,13 +42,11 @@ public:
             }
         }
 
-        if ((dTheta >= -coneHalf) && (dTheta <= coneHalf)) {
+        if ((dTheta >= (-coneHalf)) && (dTheta <= coneHalf)) {
             if (r2 >= angleType.sigma) {
                 float argu = alpha * (r2 - angleType.sigma);
                 fmorse = -2.0f * alpha * angleType.epsi * expf(-argu) * (1.0f - expf(-argu)) / r2;
                 emorse = angleType.epsi * (1.0f - expf(-argu)) * (1.0f - expf(-argu)) - angleType.epsi;
-                //printf("Epsi is %f, R2 is %f, sigma is %f, fmorse is %f\n", angleType.epsi, r2, angleType.sigma, fmorse);
-                //printf("Argu is %f, alpha is %f, emorse is %f, fmorse is %f\n", argu, alpha, emorse, fmorse);
             }
             else {
                 fmorse = 0.0f;
@@ -64,7 +61,7 @@ public:
         }
 
         else if (((dTheta >= coneHalf) && (dTheta <= cone))
-            || ((dTheta <= -coneHalf) && (dTheta >= - cone))) {
+            || ((dTheta <= (-coneHalf)) && (dTheta >= (-cone)))) {
             //Calculate attractive-only Morse
             if (r2 >= angleType.sigma) {
                 float argu = alpha * (r2 - angleType.sigma);
@@ -89,18 +86,26 @@ public:
             float a22 = a*c/distSqrs[1];
 
             if (myIdxInAngle==0) {
-                frepul.x += (directors[0].x * a11 + directors[1].x * a12);
-                frepul.y += (directors[0].y * a11 + directors[1].y * a12);
-                frepul.z += (directors[0].z * a11 + directors[1].z * a12);
+                frepul += directors[0] * a11 + a12 * directors[1];
+                //frepul.x += (directors[0].x * a11 + directors[1].x * a12);
+                //frepul.y += (directors[0].y * a11 + directors[1].y * a12);
+                //frepul.z += (directors[0].z * a11 + directors[1].z * a12);
             } else if (myIdxInAngle==1) {
-                frepul.x -= ((directors[0].x * a11 + directors[1].x * a12) + (directors[1].x * a22 + directors[0].x * a12 + cosine_term * directors[1].x * fmorse));
-                frepul.y -= ((directors[0].y * a11 + directors[1].y * a12) + (directors[1].y * a22 + directors[0].y * a12 + cosine_term * directors[1].y * fmorse)); 
-                frepul.z -= ((directors[0].z * a11 + directors[1].z * a12) + (directors[1].z * a22 + directors[0].z * a12 + cosine_term * directors[1].z * fmorse));
-            } else {
-                frepul.x += directors[1].x * a22 + directors[0].x * a12 + (cosine_term * directors[1].x * fmorse);
-                frepul.y += directors[1].y * a22 + directors[0].y * a12 + (cosine_term * directors[1].y * fmorse);
-                frepul.z += directors[1].z * a22 + directors[0].z * a12 + (cosine_term * directors[1].z * fmorse);
+                frepul -= directors[0] * a11 + directors[1] * a12 + directors[1] * a22 + a12 * directors[0] + cosine_term * directors[1] * fmorse;
+                //frepul.x -= ((directors[0].x * a11 + directors[1].x * a12) + (directors[1].x * a22 + directors[0].x * a12 + cosine_term * directors[1].x * fmorse));
+                //frepul.y -= ((directors[0].y * a11 + directors[1].y * a12) + (directors[1].y * a22 + directors[0].y * a12 + cosine_term * directors[1].y * fmorse)); 
+                //frepul.z -= ((directors[0].z * a11 + directors[1].z * a12) + (directors[1].z * a22 + directors[0].z * a12 + cosine_term * directors[1].z * fmorse));
+            } else if (myIdxInAngle==2){
+                frepul += directors[1] * a22 + directors[0] * a12 + cosine_term * directors[1] * fmorse;
+                //frepul.x += directors[1].x * a22 + directors[0].x * a12 + (cosine_term * directors[1].x * fmorse);
+                //frepul.y += directors[1].y * a22 + directors[0].y * a12 + (cosine_term * directors[1].y * fmorse);
+                //frepul.z += directors[1].z * a22 + directors[0].z * a12 + (cosine_term * directors[1].z * fmorse);
             }
+            //if (fabs(frepul.x) > 1e2 || fabs(frepul.y) > 1e2 || fabs(frepul.z) > 1e2) {
+
+
+
+            //}
         }
 
         return frepul;
@@ -153,7 +158,7 @@ public:
             float cosine = cosf(range * dTheta);
             float cosine_term  = 1.0f - cosine * cosine;
             float sine = sinf(range * dTheta);
-            float prefactor = 2.0f * range * cosine * sine * 1.0/sqrtf(1.0-c*c);
+            float prefactor = 2.0f * range * cosine * sine * 1.0f/sqrtf(1.0f-c*c);
             float a = -prefactor * emorse;
 
             float a11 = a*c/distSqrs[0];

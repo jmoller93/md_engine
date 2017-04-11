@@ -28,8 +28,8 @@ public:
     // consider that if you do so, max bonds per block could change
     //bool refreshAtoms();
 
-    void createBond(Atom *, Atom *, double, double, int);  // by ids
-    void setBondTypeCoefs(int, double, double);
+    void createBond(Atom *, Atom *, double, double, double, int);  // by ids
+    void setBondTypeCoefs(int, double, double, double);
 
     const BondHarmonicExtend getBond(size_t i) {
         return boost::get<BondHarmonicExtend>(bonds[i]);
