@@ -23,7 +23,6 @@ DihedralOPLS::DihedralOPLS(double coefs_[4], int type_) {
     type = type_;
 }
 
-
 DihedralCHARMM::DihedralCHARMM(Atom *atomA, Atom *atomB, Atom *atomC, Atom *atomD, double k_, int n_, double d_,  int type_) {
     ids[0] = atomA->id;
     ids[1] = atomB->id;
@@ -119,6 +118,18 @@ std::string DihedralCHARMM::getInfoString() {
   return ss.str();
 }
 
+std::string DihedralGauss::getInfoString() {
+  std::stringstream ss;
+  ss << "<member type='" << type << "' atomID_a='" << ids[0] << "' atomID_b='" << ids[1] << "' atomID_c='" << ids[2] << "' atomID_d='" << ids[3] << "' phi0='" << phi0<< "'sigma='" << sigma << "' k0='" << k0 << "'/>\n";
+  return ss.str();
+}
+
+std::string DihedralGaussType::getInfoString() {
+  std::stringstream ss;
+  ss << " phi0='" << phi0<< "' sigma='" << sigma << "' k0='" << k0;
+  return ss.str();
+}
+
 std::string DihedralCHARMMType::getInfoString() {
   std::stringstream ss;
   ss << " k='" << k << "' n='" << n << "' d='" << d;
@@ -141,6 +152,19 @@ bool DihedralOPLSType::operator==(const DihedralOPLSType &other) const {
         if (coefs[i] != other.coefs[i]) {
             return false;
         }
+    }
+    return true;
+}
+
+bool DihedralGaussType::operator==(const DihedralGaussType &other) const {
+    if (phi0 != other.phi0) {
+        return false;
+    }
+    else if (sigma != other.sigma) {
+        return false;
+    }
+    else if (k0 != other.k0) {
+        return false;
     }
     return true;
 }

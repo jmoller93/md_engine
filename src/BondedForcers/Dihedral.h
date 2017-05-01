@@ -9,6 +9,7 @@
 #include <boost/functional/hash.hpp>
 #include <array>
 class DihedralOPLS;
+class DihedralGauss;
 class DihedralCHARMM;
 class DihedralGauss;
 void export_Dihedrals();
