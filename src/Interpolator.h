@@ -1,6 +1,4 @@
 #pragma once
-#ifndef FIXINTERPOLATOR_BASE_H
-#define FIXINTERPOLATOR_BASE_H
 
 #include <boost/python.hpp>
 #include "BoundsGPU.h"
@@ -36,4 +34,3 @@ public:
 };
 
 
-#endif

@@ -18,10 +18,11 @@ __global__ void rescale_all(int nAtoms, float4 *vs, float4 *sumData, float3 dims
     if (idx < nAtoms) {
         float4 v = vs[idx];
         float4 sum = sumData[0];
-        int invMassTotal = 1.0f / v.w;
+        float invMassTotal = 1.0f / sum.w;
         v.x -= sum.x * invMassTotal * dims.x;
         v.y -= sum.y * invMassTotal * dims.y;
         v.z -= sum.z * invMassTotal * dims.z;
+        vs[idx] = v;
     }
 }
 
@@ -33,21 +34,23 @@ __global__ void rescale_group(int nAtoms, float4 *vs, float4 *fs, uint32_t group
         if (tag & groupTag) {
             float4 v = vs[idx];
             float4 sum = sumData[0];
-            int invMassTotal = 1.0f / sum.w;
+            float invMassTotal = 1.0f / sum.w;
             v.x -= sum.x * invMassTotal * dims.x;
             v.y -= sum.y * invMassTotal * dims.y;
             v.z -= sum.z * invMassTotal * dims.z;
+            vs[idx] = v;
         }
     }
 }
 
-void FixLinearMomentum::compute(bool computeVirials) {
+void FixLinearMomentum::compute(int virialMode) {
     float3 dimsFloat3 = dimensions.asFloat3();
     int nAtoms = state->atoms.size();
     float4 *vs = state->gpd.vs.getDevData();
     float4 *fs = state->gpd.vs.getDevData();
     int warpSize = state->devManager.prop.warpSize;
 
+    sumMomentum.memset(0); 
     if (groupHandle == "all") {
         accumulate_gpu<float4, float4, SumVectorXYZOverW, N_DATA_PER_THREAD> <<<NBLOCK(nAtoms / (double) N_DATA_PER_THREAD), PERBLOCK, N_DATA_PER_THREAD*PERBLOCK*sizeof(float4)>>>
             (
