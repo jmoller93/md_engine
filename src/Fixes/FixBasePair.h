@@ -27,7 +27,7 @@ public:
     FixBasePair3SPN2(boost::shared_ptr<State> state_, std::string handle);
 
     void setParameters(float, float);
-    void compute(bool);
+    void compute(int);
     void singlePointEng(float *);
     bool prepareForRun();
 

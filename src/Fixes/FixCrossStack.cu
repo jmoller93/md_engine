@@ -26,16 +26,16 @@ bool FixCrossStack3SPN2::prepareForRun() {
 }
 
 
-void FixCrossStack3SPN2::compute(bool computeVirials) {
+void FixCrossStack3SPN2::compute(int virialMode) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
    
     GPUData &gpd = state->gpd;
     if (forcersGPU.size()) {
-        if (computeVirials) {
-            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+        if (virialMode) {
+            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, true><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
         } else {
-            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+            compute_force_crossstack<CrossStack3SPN2Type, CrossStackEvaluator3SPN2, false><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
         }
     }
 }
@@ -46,7 +46,7 @@ void FixCrossStack3SPN2::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_crossstack<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_crossstack<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }

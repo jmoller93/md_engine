@@ -54,17 +54,18 @@ void FixChargePairDH::setParameters(float temp_, float ionic_, float r_cut_)
     //printf("Epsi is %f, debye length is %f\n", 1.0/epsi, 1.0/lambdai);
 }
 
-void FixChargePairDH::compute(bool computeVirials) {
+void FixChargePairDH::compute(int virialMode) {
     int nAtoms = state->atoms.size();
+    int nPerRingPoly = state->nPerRingPoly;
     GPUData &gpd = state->gpd;
     GridGPU &grid = state->gridGPU;
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     float *neighborCoefs = state->specialNeighborCoefs;
-    evalWrap->compute(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx),
+    evalWrap->compute(nAtoms, nPerRingPoly, gpd.xs(activeIdx), gpd.fs(activeIdx),
                   neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                   state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU,
-                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, computeVirials);
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, virialMode);
   //  compute_charge_pair_DH_cu<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), neighborIdxs, grid.neighborlist.tex, gpd.qs(activeIdx), alpha,r_cut, A,shift, state->boundsGPU, 0.5);
 }
 

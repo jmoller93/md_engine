@@ -33,12 +33,12 @@ void FixBondHarmonicExtend::setBondTypeCoefs(int type, double k1, double k2, dou
     setBondType(type, dummy);
 }
 
-void FixBondHarmonicExtend::compute(bool computeVirials) {
+void FixBondHarmonicExtend::compute(int virialMode) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
     GPUData &gpd = state->gpd;
     //cout << "Max bonds per block is " << maxBondsPerBlock << endl;
-    if (computeVirials) {
+    if (virialMode) {
         compute_force_bond<BondHarmonicExtendType, BondEvaluatorHarmonicExtend, true> <<<NBLOCK(nAtoms), PERBLOCK, sizeof(BondGPU) * maxBondsPerBlock + sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), bondsGPU.data(), bondIdxs.data(), parameters.data(), parameters.size(), state->boundsGPU, gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
     } else {
         compute_force_bond<BondHarmonicExtendType, BondEvaluatorHarmonicExtend, false> <<<NBLOCK(nAtoms), PERBLOCK, sizeof(BondGPU) * maxBondsPerBlock + sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), bondsGPU.data(), bondIdxs.data(), parameters.data(), parameters.size(), state->boundsGPU, gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);

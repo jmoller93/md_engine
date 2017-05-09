@@ -20,7 +20,6 @@ state.rCut = 30.0
 state.padding = 1.0
 state.periodicInterval = 100
 state.shoutEvery = 5000
-state.dt = 20.0
 state.setSpecialNeighborCoefs(0, 0, 0)
 
 #kJ to kcal converter
@@ -85,7 +84,7 @@ for line in f:
         state.addAtom(handle=str(bits[0]), pos=Vector(float(bits[1]), float(bits[2]), float(bits[3])),mol_id=int(bits[4]))
 
 #Read the bond information
-f = open('%s/in00_bond.xml' % wdir).readlines()
+f = open('%s/in00_bond.dat' % wdir).readlines()
 bondDNA  = FixBondHarmonicExtend(state, 'bondDNA')
 bondProt = FixBondHarmonicExtend(state, 'bondProt')
 for line in f:
@@ -100,7 +99,7 @@ state.activateFix(bondDNA)
 state.activateFix(bondProt)
 
 #Read and activate the bonded angles
-f = open('%s/in00_bend.xml' % wdir).readlines()
+f = open('%s/in00_bend.dat' % wdir).readlines()
 angle = FixAngleHarmonic(state, 'angle')
 for line in f:
     angleInfo = line.split()
@@ -110,7 +109,7 @@ for line in f:
 state.activateFix(angle)
 
 #Read the bonded dihedrals (Periodic and Gauss)
-f = open('%s/in00_tors.xml' % wdir).readlines()
+f = open('%s/in00_tors.dat' % wdir).readlines()
 diheGauss = FixDihedralGauss(state, 'gauss')
 dihePeri = FixDihedralPeriodic(state, 'periodic')
 for line in f:
@@ -129,7 +128,7 @@ state.activateFix(diheGauss)
 state.activateFix(dihePeri)
 
 #Read and generate the GoLike interactions between the protein sites
-f = open('%s/in00_natv.xml' % wdir).readlines()
+f = open('%s/in00_natv.dat' % wdir).readlines()
 natv = FixBondGoLike(state, 'natv')
 for line in f:
     natvInfo = line.split()
@@ -211,13 +210,17 @@ fixNVT.setParameters(0,0.002)
 state.activateFix(fixNVT)
 
 #Run the actual system
-integVerlet = IntegratorVerlet(state)
-integRelax = IntegratorGradientDescent(state)
+#integRelax = IntegratorGradientDescent(state)
 integRelax2 = IntegratorRelax(state)
-integRelax.run(30000000,0.0001)
-#integRelax2.run(100000,0.00001)
-writeconfig = WriteConfig(state, fn='traj_3', writeEvery=1000, format='xyz', handle='writer')
+integVerlet = IntegratorVerlet(state)
+writeconfig = WriteConfig(state, fn='traj_2', writeEvery=10000, format='xyz', handle='writer')
 writeconfig.write()
 state.activateWriteConfig(writeconfig)
-integVerlet.run(2001)
+#integRelax.run(10000000,0.00001)
+state.dt = 0.2
+#integRelax2.run(200000,0.0001)
+state.dt = 20.0
+#integRelax2.run(100000,0.00001)
+state.dt = 15.0
+integVerlet.run(10000000)
 

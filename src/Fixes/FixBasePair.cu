@@ -26,17 +26,18 @@ bool FixBasePair3SPN2::prepareForRun() {
 }
 
 
-void FixBasePair3SPN2::compute(bool computeVirials) {
+void FixBasePair3SPN2::compute(int virialMode) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
+    //std::cout<<nAtoms<<"\t"<<forcersGPU.size()<<std::endl;
 
 
     GPUData &gpd = state->gpd;
     if(forcersGPU.size()) {
-        if (computeVirials) {
-            compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(),  state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+        if (virialMode) {
+            compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, true><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(),  state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
         } else {
-            compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
+            compute_force_basepair<BasePair3SPN2Type, BasePairEvaluator3SPN2, false><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams >>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx),gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
         }
     }
 }
@@ -47,7 +48,7 @@ void FixBasePair3SPN2::singlePointEng(float *perParticleEng) {
     int activeIdx = state->gpd.activeIdx();
 
     GPUData &gpd = state->gpd;
-    compute_energy_basepair<<<forcersGPU.size(), PERBLOCK, sharedMemSizeForParams>>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
+    compute_energy_basepair<<<forcersGPU.size(), PERBLOCK, sizeof(BasePairGPU) * maxForcersPerBlock + sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
 
 }
@@ -59,7 +60,7 @@ void FixBasePair3SPN2::createBasePair(Atom *a, Atom *b, Atom *c, Atom *d, double
             assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and epsi!=COEF_DEFAULT and theta1!=COEF_DEFAULT and theta2!=COEF_DEFAULT);
     }
     forcers.push_back(BasePair3SPN2(a, b, c, d, phi0, sigma, epsi, theta1, theta2, type));
-    //printf("ids in create %d %d %d %d\n", a, b, c, d);
+    //printf("ids in create %d %d %d %d\n", a->id, b->id, c->id, d->id);
     bonds.push_back(BondHarmonic(b,d, 0.0, 0.0, type));
     //bonds.push_back(BondHarmonic(a,d, 0.0, 0.0, type));
     //bonds.push_back(BondHarmonic(b,c, 0.0, 0.0, type));

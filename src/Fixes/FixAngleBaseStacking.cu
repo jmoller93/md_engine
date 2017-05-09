@@ -25,12 +25,12 @@ bool FixAngleBaseStacking::prepareForRun() {
     return true;
 }
 
-void FixAngleBaseStacking::compute(bool computeVirials) {
+void FixAngleBaseStacking::compute(int virialMode) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
     GPUData &gpd = state->gpd;
     if (forcersGPU.size()) {
-        if (computeVirials) {
+        if (virialMode) {
             compute_force_angle<AngleBaseStackingType, AngleEvaluatorBaseStacking, true> <<<NBLOCK(nAtoms), PERBLOCK, sizeof(AngleGPU) * maxForcersPerBlock + sharedMemSizeForParams>>>(nAtoms, state->gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);
         } else {
             compute_force_angle<AngleBaseStackingType, AngleEvaluatorBaseStacking, false> <<<NBLOCK(nAtoms), PERBLOCK, sizeof(AngleGPU) * maxForcersPerBlock + sharedMemSizeForParams>>>(nAtoms, state->gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), usingSharedMemForParams, evaluator);

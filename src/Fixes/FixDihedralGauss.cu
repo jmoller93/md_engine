@@ -14,14 +14,14 @@ FixDihedralGauss::FixDihedralGauss(SHARED(State) state_, string handle) : FixPot
 }
 
 
-void FixDihedralGauss::compute(bool computeVirials) {
+void FixDihedralGauss::compute(int virialMode) {
     int nAtoms = state->atoms.size();
     int activeIdx = state->gpd.activeIdx();
 
 
     GPUData &gpd = state->gpd;
     if (forcersGPU.size()) {
-        if (computeVirials) {
+        if (virialMode) {
             compute_force_dihedral<DihedralGaussType, DihedralEvaluatorGauss, true><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
         } else {
             compute_force_dihedral<DihedralGaussType, DihedralEvaluatorGauss, false><<<NBLOCK(forcersGPU.size()), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), gpd.fs(activeIdx), gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), gpd.virials.d_data.data(), false, evaluator);
@@ -35,7 +35,7 @@ void FixDihedralGauss::singlePointEng(float *perParticleEng) {
 
     GPUData &gpd = state->gpd;
     if (forcersGPU.size()) {
-        compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), false, evaluator);
+        compute_energy_dihedral<<<NBLOCK(forcersGPU.size()), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sharedMemSizeForParams>>>(forcersGPU.size(), gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), state->boundsGPU, parameters.data(), parameters.size(), false, evaluator);
     }
   //  compute_energy_dihedral<<<NBLOCK(nAtoms), PERBLOCK, sizeof(DihedralGPU) * maxForcersPerBlock + sizeof(DihedralGaussType) * parameters.size() >>>(nAtoms, gpd.xs(activeIdx), perParticleEng, gpd.idToIdxs.d_data.data(), forcersGPU.data(), forcerIdxs.data(), state->boundsGPU, parameters.data(), parameters.size(), evaluator);
     
@@ -47,6 +47,7 @@ void FixDihedralGauss::createDihedral(Atom *a, Atom *b, Atom *c, Atom *d, double
     if (type==-1) {
             assert(phi0!=COEF_DEFAULT and sigma!=COEF_DEFAULT and k0!=COEF_DEFAULT);
     }
+    //std::cout<<"Ids are as follows"<<a->id<<"\t"<<b->id<<"\t"<<c->id<<"\t"<<d->id<<std::endl;
     forcers.push_back(DihedralGauss(a, b, c, d, phi0, sigma, k0, type));
     pyListInterface.updateAppendedMember();
 }

@@ -29,7 +29,7 @@ public:
 
     //Right now temp has to be in K and ionic has to be in M for units of params to work out
     void setParameters(float temp_, float ionic_, float r_cut_);
-    void compute(bool);
+    void compute(int);
     ChargeEvaluatorDH generateEvaluator();
     void setEvalWrapper();
     std::vector<float> getRCuts();

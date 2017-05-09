@@ -24,7 +24,7 @@ public:
 
     void setParameters(float, float);
     bool prepareForRun();
-    void compute(bool);
+    void compute(int);
     void singlePointEng(float *);
 
     void createAngle(Atom *, Atom *, Atom *, double, double, double, int type_);

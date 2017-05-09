@@ -18,7 +18,7 @@ public:
 
     ~FixBondHarmonicExtend(){};
 
-    void compute(bool);
+    void compute(int);
     void singlePointEng(float *);
     std::string restartChunk(std::string format);
     bool readFromRestart();
