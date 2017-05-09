@@ -17,9 +17,9 @@ class ChargeEvaluatorDH {
             //if(forceScalar != 0) { printf("force is this %f\n", forceScalar);}
             return dr * forceScalar;
         }
-        inline __device__ float energy(float lenSqr, float qi, float qj, float multiplier) {
+        inline __device__ float energy(float lenSqr, float qi, float qj, float multiplier, float molParam) {
             float len = sqrtf(lenSqr);
-            return qqr_to_eng*qi*qj*epsi*expf(-len*lambdai) * multiplier / len;
+            return qqr_to_eng*qi*qj*epsi*expf(-len*lambdai) * multiplier / len * molParam;
         }
         ChargeEvaluatorDH(float lambdai_, float epsi_, float qqr_to_eng_) : lambdai(lambdai_), epsi(epsi_), qqr_to_eng(qqr_to_eng_)  {};
 

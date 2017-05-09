@@ -274,7 +274,6 @@ public:
         float cone = 2.0f * range;
         
         float phiFactor = 0.5f * (1.0f + cosf(dPhi));
-        float ftor = 0.5f * sinf(dPhi);
         float energyMors;
         float eBasePair = 0.0f;
 

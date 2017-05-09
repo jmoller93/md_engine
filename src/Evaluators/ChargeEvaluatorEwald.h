@@ -24,7 +24,7 @@ class ChargeEvaluatorEwald {
             forceScalar *= r2inv;
             return dr * forceScalar;
         }
-        inline __device__ float energy(float lenSqr, float qi, float qj, float multiplier) {
+        inline __device__ float energy(float lenSqr, float qi, float qj, float multiplier, float molParam) {
             if (lenSqr < 1e-10) {
                 lenSqr = 1e-10;
             }

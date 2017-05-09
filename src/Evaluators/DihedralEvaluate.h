@@ -173,6 +173,7 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
         //forces[3].z = a13Dir1.z + a23Dir2.z + a33Dir3.z;
         //forces[2] = sFloat3 - forces[3];
         //printf("phi is %f\n", phi);
+        //printf("Dihderal ids are %d\t%d\t%d\t%d\n", dihedral.ids[0], dihedral.ids[1],dihedral.ids[2],dihedral.ids[3]);
         for (int i=0; i<4; i++) {
             atomicAdd(&(fs[idxs[i]].x), (forces[i].x));
             atomicAdd(&(fs[idxs[i]].y), (forces[i].y));
@@ -300,7 +301,7 @@ __global__ void compute_energy_dihedral(int nDihedrals, float4 *xs, float *perPa
             phi = -phi;
         }
         // printf("phi is %f\n", phi);
-
+#
         //printf("no force\n");
         float potential = evaluator.potential(dihedralType, phi) * 0.25f;
         for (int i=0; i<4; i++) {

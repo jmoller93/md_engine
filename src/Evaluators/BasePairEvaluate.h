@@ -146,6 +146,7 @@ __global__ void compute_force_basepair(int nBasePairs, float4 *xs, float4 *fs, i
         //printf("force 2: %f\t%f\t%f\n", allForces[1].x, allForces[1].y, allForces[1].z);
         //printf("force 3: %f\t%f\t%f\n", allForces[2].x, allForces[2].y, allForces[2].z);
         //printf("force 4: %f\t%f\t%f\n", allForces[3].x, allForces[3].y, allForces[3].z);
+        //printf("basepair ids are %d\t%d\t%d\t%d\n", basepair.ids[0], basepair.ids[1],basepair.ids[2],basepair.ids[3]);
 
         for (int i=0; i<4; i++) {
             atomicAdd(&(fs[idxs[i]].x), (allForces[i].x));

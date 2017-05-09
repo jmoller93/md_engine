@@ -264,16 +264,19 @@ __global__ void compute_energy_iso
                 sumEng += pairEval.energy(params_pair, lenSqr, multiplier);
             }
             if (COMP_CHARGES && lenSqr < qCutoffSqr) {
+                float molParam = 0;
+                if(molId > 0 && otherMolId > 0 && molId != otherMolId) {
+                    molParam = 1.0f;
+                }
+                else if (molId == 0 || otherMolId == 0 && molId != otherMolId) {
+                    molParam = 1.666667f;
+                }
+                //printf("atom type is %d molId is %d otherMolId is %d molParam is %f\n",type, molId, otherMolId, molParam);
+                //compute charge pair force if necessary
                 float qj = qs[otherIdx];
-                float eng = chargeEval.energy(lenSqr, qi, qj, multiplier);
-                //printf("len is %f\n", sqrtf(lenSqr));
-                //printf("qi qj %f %f\n", qi, qj);
-                //printf("eng is %f\n", eng);
+                float eng = chargeEval.energy(lenSqr, qi, qj, multiplier, molParam);
                 sumEng += eng;
-
             }
-
-
         }   
         perParticleEng[idx] += sumEng;
 

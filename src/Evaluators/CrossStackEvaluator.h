@@ -316,62 +316,125 @@ public:
 
 
     inline __device__ float energy(CrossStack3SPN2Type crossstackType, float thetas[3], float invLens[5], float invLenSqrs[5], float3 directors[5]) {
-        /*float dPhi = phi - crossstackType.phi0;
-        float dTheta1 = thetas[0] - crossstackType.theta1;
-        float dTheta2 = thetas[1] - crossstackType.theta2;
-        float cone = 2.0f * range;
+        float dTheta3 = thetas[0] - crossstackType.theta3;
+        float dTheta1 = thetas[1] - crossstackType.theta1;
+        float dTheta2 = thetas[2] - crossstackType.theta2;
+
+        float invRange  = 1.0f/range;
+        float cone = M_PI * invRange;
+        float coneBp = M_PI /12.0f;
+        float coneHalf = cone * 0.5f;
         
-        float phiFactor = 0.5f * (1.0f + cosf(dPhi));
-        float ftor = 0.5f * sinf(dPhi);
         float energyMors;
         float eCrossStack = 0.0f;
 
-        if(lengthSqr(directors[1]) < crossstackType.sigma) {
-            //Use a purely repulsive Morse potential
-            energyMors = morsRepEnrgy(invLens[1], alpha, crossstackType.epsi, crossstackType.sigma);
-            eCrossStack += energyMors * phiFactor;
-
+        if ((dTheta3 >= -(coneBp*0.5f)) && (dTheta3 <= coneBp*0.5f)) {
+            if ((dTheta1 >= -(coneHalf)) && (dTheta1 <= coneHalf)) {
+                //Evaluate the Morse potentials
+                energyMors = morsAttrEnrgy(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                //printf("dist and sigma are %f\t%f\n", 1.0f/invLens[3], crossstackType.sigma1);
+                eCrossStack += energyMors;
+            }
+            //The modulated form of the morse potential only on theta 1
+            else if (((dTheta1 >= coneHalf) && (dTheta1 <= cone)) || ((dTheta1 <= -coneHalf) && (dTheta1 >= -cone))) {
+                //Angle factors
+                float cosine2 = cosf(range*dTheta1);
+                float cross_term = 1.0f - cosine2 * cosine2;
+                //Evaluate the morse potential and force
+                energyMors = morsAttrEnrgy(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                eCrossStack += energyMors * cross_term;
+            }
+            else {
+                //Nothing to do here
+            }
         }
 
-        if ((dTheta1 >= -M_PI/(cone)) && (dTheta1 <= M_PI/(cone))) {
-            if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
+        //Modulated theta3
+        else if (((dTheta3 >= coneBp*0.5f) && (dTheta3 <= coneBp)) || ((dTheta3 <= -coneBp*0.5f) && (dTheta3 >= -coneBp))) {
+            //More angle parameters for theta3
+            float cosine = cosf(12.0f*dTheta3);
+            float basepair_term = 1.0f - cosine * cosine;
+    
+            //Full potential for theta1 and modulated theta3
+            if ((dTheta1 >= -coneHalf) && (dTheta1 <= coneHalf)) {
 
-                energyMors = morsAttrEnrgy(invLens[1], alpha, crossstackType.epsi, crossstackType.sigma);
-                eCrossStack += phiFactor * energyMors;
-
+                //Calculate Morse potential and forces again
+                energyMors = morsAttrEnrgy(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                eCrossStack += energyMors * basepair_term;
             }
-            else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
+            //Both potentials are modulated
+            else if (((dTheta1 >= (coneHalf)) && (dTheta1 <= cone)) || (((dTheta1 <= (-coneHalf)) && (dTheta1 >= -cone)))) {
+                float cosine2 = cosf(range*dTheta1);
+                float cross_term = 1.0f - cosine2 * cosine2;
+
+                //More evaluations of the Morse potential
+                energyMors = morsAttrEnrgy(invLens[3], alpha, crossstackType.epsi, crossstackType.sigma1);
+                eCrossStack += energyMors * cross_term * basepair_term;
+            }
+            else {
+                //More nothingness
+            }
+        }
+        else {
+            //If an angle is here, ya goofed
+        }
+ 
+        //Cross-stack 2 interactions (c-d-f)
+        //In a later version this may be switched to a second kernel call so that the nanoparticle sims can be run
+        if ((dTheta3 >= -(coneBp*0.5f)) && (dTheta3 <= coneBp*0.5f)) {
+            if ((dTheta2 >= -(coneHalf)) && (dTheta2 <= coneHalf)) {
+
+                //Evaluate the Morse potentials
+                energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                eCrossStack += energyMors;
+            }
+
+            //The modulated form of the morse potential only on theta 2
+            else if (((dTheta2 >= coneHalf) && (dTheta2 <= cone)) || ((dTheta2 <= -coneHalf) && (dTheta2 >= -cone))) {
+                //Angle factors
                 float cosine2 = cosf(range*dTheta2);
-                float sine2 = sinf(range*dTheta2);
-                float hbon_cosine = 1.0f - cosine2 * cosine2;
+                float cross_term = 1.0f - cosine2 * cosine2;
 
-                energyMors = morsAttrEnrgy(invLens[1], alpha, crossstackType.epsi, crossstackType.sigma);
-                eCrossStack += phiFactor * hbon_cosine * energyMors;
-
+                //Evaluate the morse potential and force
+                energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                eCrossStack += energyMors * cross_term;
             }
-            else if (((dTheta1 >= M_PI/(cone)) && (dTheta1 <= M_PI/(range))) || ((dTheta1 <= -M_PI/(cone)) && (dTheta1 >= -M_PI/(range)))) {
-                float cosine = cosf(range*dTheta1);
-                float sine = sinf(range*dTheta1);
-
-                if ((dTheta2 >= -M_PI/(cone)) && (dTheta2 <= M_PI/(cone))) {
-                    energyMors = morsAttrEnrgy(invLens[1], alpha, crossstackType.epsi, crossstackType.sigma);
-                    eCrossStack += phiFactor * energyMors;
-
-                }
-                else if (((dTheta2 >= M_PI/(cone)) && (dTheta2 <= M_PI/(range))) || ((dTheta2 <= -M_PI/(cone)) && (dTheta2 >= -M_PI/(range)))) {
-                    float cosine2 = cosf(range*dTheta2);
-                    float sine2 = sinf(range*dTheta2);
-                    float hbon_cosine2 = 1.0f - cosine2 * cosine2;
-
-                    energyMors = morsAttrEnrgy(invLens[1], alpha, crossstackType.epsi, crossstackType.sigma);
-                    eCrossStack += phiFactor * hbon_cosine2 * energyMors;
-
-
-                }
+            else {
+                //Nothing else happens here. I've cheated you. I've cheated ALL of you
             }
         }
-        return eCrossStack;*/
-        return 0;
+
+        //Modulated theta3
+        else if (((dTheta3 >= coneBp*0.5f) && (dTheta3 <= coneBp)) || ((dTheta3 <= -coneBp*0.5f) && (dTheta3 >= -coneBp))) {
+
+            //More angle parameters for theta3
+            float cosine = cosf(12.0f*dTheta3);
+            float basepair_term = 1.0f - cosine * cosine;
+    
+            //Full potential for theta1 and modulated theta3
+            if ((dTheta2 >= -coneHalf) && (dTheta2 <= coneHalf)) {
+
+                //Calculate Morse potential and forces again
+                energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                eCrossStack += energyMors * basepair_term;
+            }
+            //Both potentials are modulated
+            else if (((dTheta2 >= (coneHalf)) && (dTheta2 <= cone)) || (((dTheta2 <= (-coneHalf)) && (dTheta2 >= -cone)))) {
+                float cosine2 = cosf(range*dTheta2);
+                float cross_term = 1.0f - cosine2 * cosine2;
+
+                //More evaluations of the Morse potential
+                energyMors = morsAttrEnrgy(invLens[4], alpha, crossstackType.epsi, crossstackType.sigma2);
+                eCrossStack += energyMors * cross_term * basepair_term;
+            }
+            else {
+                //More nothingness
+            }
+        }
+        else {
+            //If an angle is here, ya goofed
+        }
+        return eCrossStack;
     }
 };
 

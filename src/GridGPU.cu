@@ -353,6 +353,7 @@ __device__ int assignFromCell(float3 pos, int idx, uint myId, float4 *xs, uint *
                               float3 offset, float3 trace, float neighCutSqr,
                               int currentNeighborIdx, uint *neighborlist,
                               uint *exclusionIds, int exclIdxLo_shr, int exclIdxHi_shr,
+                              int nPerRingPoly,
                               int warpSize) {
 
     uint idxMin = gridCellArrayIdxs[squareIdx];
@@ -409,7 +410,6 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
     uint *myArray;
     int exclIdxLo_shr, exclIdxHi_shr, numExclusions;
     exclIdxLo_shr = threadIdx.x * maxExclusionsPerAtom;
-
     if (usingShared) {
         myArray = exclusionIds_shr;
     } else {
@@ -417,9 +417,9 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
     }
 
 
-    if (idx < nAtoms) {
+    if (idx < nRingPoly) {
         posWhole = xs[idx];
-        myId = ids[idx];
+        myId = ids[idx*nPerRingPoly]; //in PIMD, I just need the id of _one_ of the atoms in my ring poly b/c all the 1-2,3,4 dists are the same
         int exclIdxLo = exclusionIndexes[myId];
         int exclIdxHi = exclusionIndexes[myId+1];
         numExclusions = exclIdxHi - exclIdxLo;
@@ -443,7 +443,6 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
     //okay, then just start here and space by warpSize;
     //YOU JUST NEED TO UPDATE HOW WE CHECK EXCLUSIONS (IDXS IN SHARED)
     if (idx < nRingPoly) {
-        posWhole = xs[idx];
         //printf("threadid %d idx %x has lo, hi of %d, %d\n", threadIdx.x, idx, exclIdxLo_shr, exclIdxHi_shr);
         int    currentNeighborIdx = baseNeighlistIdx(cumulSumMaxPerBlock, warpSize);
         float3 pos = make_float3(posWhole);
@@ -451,7 +450,7 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
         int    xIdx, yIdx, zIdx;
         int    xIdxLoop, yIdxLoop, zIdxLoop;
         float3 offset = make_float3(0, 0, 0);
-        currentNeighborIdx = assignFromCell(pos, idx, myId, xs, ids, gridCellArrayIdxs, LINEARIDX(sqrIdx, ns), offset, trace, neighCutSqr, currentNeighborIdx, neighborlist, myArray, exclIdxLo_shr, exclIdxHi_shr, warpSize);
+        currentNeighborIdx = assignFromCell(pos, idx, myId, xs, ids, gridCellArrayIdxs, LINEARIDX(sqrIdx, ns), offset, trace, neighCutSqr, currentNeighborIdx, neighborlist, myArray, exclIdxLo_shr, exclIdxHi_shr, nPerRingPoly, warpSize);
         for (xIdx=sqrIdx.x-1; xIdx<=sqrIdx.x+1; xIdx++) {
             offset.x = -floorf((float) xIdx / ns.x);
             xIdxLoop = xIdx + ns.x * offset.x;
@@ -474,7 +473,7 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
                                             pos, idx, myId, xs, ids, gridCellArrayIdxs,
                                             sqrIdxOtherLin, -offset, trace, neighCutSqr,
                                             currentNeighborIdx, neighborlist,
-                                            myArray, exclIdxLo_shr, exclIdxHi_shr,
+                                            myArray, exclIdxLo_shr, exclIdxHi_shr, nPerRingPoly,
                                             warpSize);
                                 }
 
@@ -727,15 +726,15 @@ void GridGPU::periodicBoundaryConditions(float neighCut, bool forceBuild) {
         }
         bool usingShared = state->devManager.prop.sharedMemPerBlock >= PERBLOCK*maxExclusionsPerAtom*sizeof(uint);
         if (usingShared) {
-            assignNeighbors<<<NBLOCK(nAtoms), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
-                    state->gpd.xs(gridIdx), nAtoms, state->gpd.ids(gridIdx),
+            assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
+                    centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
                     perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
                     bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
                     exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(),maxExclusionsPerAtom, usingShared
                     );
         } else {
-            assignNeighbors<<<NBLOCK(nAtoms), PERBLOCK, sizeof(uint)>>>(
-                    state->gpd.xs(gridIdx), nAtoms, state->gpd.ids(gridIdx),
+            assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, sizeof(uint)>>>(
+                    centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
                     perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
                     bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
                     exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(),maxExclusionsPerAtom, usingShared
@@ -743,12 +742,14 @@ void GridGPU::periodicBoundaryConditions(float neighCut, bool forceBuild) {
 
         }
         /*
-        assignNeighbors<<<NBLOCK(nAtoms), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
-                state->gpd.xs(gridIdx), nAtoms, state->gpd.ids(gridIdx),
+    
+        assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
+                centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
                 perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
                 bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
                 exclusionIndexes.data(), exclusionIds.data(), maxExclusionsPerAtom
         ); //PER RP CENTROID
+        */
 
      
         if (bounds.isSkewed()) {
