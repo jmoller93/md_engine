@@ -2,6 +2,8 @@
 
 #include <chrono>
 
+#undef _XOPEN_SOURCE
+#undef _POSIX_C_SOURCE
 #include <boost/python.hpp>
 #include <boost/shared_ptr.hpp>
 #include "Logging.h"
@@ -89,6 +91,9 @@ void IntegratorGradientDescent::run(int numTurns, double coef)
 
         // Calculate forces
         forceSingle(virialMode);
+
+        //quits if ctrl+c has been pressed
+        checkQuit();
 
         // Descend along gradient
         step(coef);

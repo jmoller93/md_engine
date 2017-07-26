@@ -44,11 +44,10 @@ void FixLJCHARMM::compute(int virialMode) {
     int activeIdx = gpd.activeIdx();
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     auto neighborCoefs = state->specialNeighborCoefs;
-
     evalWrap->compute(nAtoms,nPerRingPoly, gpd.xs(activeIdx), gpd.fs(activeIdx),
                       neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                       state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU,
-                      neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), chargeRCut, virialMode);
+                      neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), chargeRCut, virialMode, nThreadPerBlock(), nThreadPerAtom());
 
 }
 
@@ -63,19 +62,31 @@ void FixLJCHARMM::singlePointEng(float *perParticleEng) {
     uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
     //float neighborCoefs[4] = {1, 1, 1, 0}; //see comment above
     //evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut);
-    evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut);
+    evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut, nThreadPerBlock(), nThreadPerAtom());
+}
 
 
-
+void FixLJCHARMM::singlePointEngGroupGroup(float *perParticleEng, uint32_t tagA, uint32_t tagB) {
+    int nAtoms = state->atoms.size();
+    int nPerRingPoly = state->nPerRingPoly;
+    int numTypes = state->atomParams.numTypes;
+    GPUData &gpd = state->gpd;
+    GridGPU &grid = state->gridGPU;
+    int activeIdx = gpd.activeIdx();
+    auto neighborCoefs = state->specialNeighborCoefs;
+    uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
+    //float neighborCoefs[4] = {1, 1, 1, 0}; //see comment above
+    //evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut);
+    evalWrap->energyGroupGroup(nAtoms,nPerRingPoly, gpd.xs(activeIdx), gpd.fs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, paramsCoalesced.data(), numTypes, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), chargeRCut, tagA, tagB, nThreadPerBlock(), nThreadPerAtom());
 }
 
 void FixLJCHARMM::setEvalWrapper() {
-    if (evalWrapperMode == "orig") {
+    if (evalWrapperMode == "offload") {
         EvaluatorCHARMM eval(state->specialNeighborCoefs[2]);
-        evalWrap = pickEvaluator<EvaluatorCHARMM, 3, true>(eval, chargeCalcFix);
+        evalWrap = pickEvaluator<EvaluatorCHARMM, 5, true>(eval, chargeCalcFix);
     } else if (evalWrapperMode == "self") {
         EvaluatorCHARMM eval(state->specialNeighborCoefs[2]);
-        evalWrap = pickEvaluator<EvaluatorCHARMM, 3, true>(eval, nullptr);
+        evalWrap = pickEvaluator<EvaluatorCHARMM, 5, true>(eval, nullptr);
     }
 }
 

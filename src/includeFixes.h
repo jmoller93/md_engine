@@ -13,6 +13,7 @@
 #include "FixDihedralGauss.h"
 #include "FixLJCut.h"
 #include "FixLJCutFS.h"
+#include "FixLJCHARMM.h"
 #include "FixTICG.h"
 #include "Fix2d.h"
 #include "Fix.h"
