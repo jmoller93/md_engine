@@ -62,7 +62,7 @@ void FixChargePairDSF::compute(int virialMode) {
     evalWrap->compute(nAtoms,nPerRingPoly, gpd.xs(activeIdx), gpd.fs(activeIdx),
                   neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                   state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU,
-                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, virialMode);
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, virialMode, nThreadPerBlock(), nThreadPerAtom());
 
 
 
@@ -79,9 +79,22 @@ void FixChargePairDSF::singlePointEng(float * perParticleEng) {
     evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng,
                   neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                   state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU,
-                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],  gpd.qs(activeIdx), r_cut);
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],  gpd.qs(activeIdx), r_cut, nThreadPerBlock(), nThreadPerAtom());
 
+}
 
+void FixChargePairDSF::singlePointEngGroupGroup(float * perParticleEng, uint32_t tagA, uint32_t tagB) {
+    int nAtoms = state->atoms.size();
+    int nPerRingPoly = state->nPerRingPoly;
+    GPUData &gpd = state->gpd;
+    GridGPU &grid = state->gridGPU;
+    int activeIdx = gpd.activeIdx();
+    uint16_t *neighborCounts = grid.perAtomArray.d_data.data();
+    float *neighborCoefs = state->specialNeighborCoefs;
+    evalWrap->energyGroupGroup(nAtoms,nPerRingPoly, gpd.xs(activeIdx), gpd.fs(activeIdx), perParticleEng,
+                  neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
+                  state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU,
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2],  gpd.qs(activeIdx), r_cut, tagA, tagB, nThreadPerBlock(), nThreadPerAtom());
 
 }
 

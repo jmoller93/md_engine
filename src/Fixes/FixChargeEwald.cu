@@ -755,6 +755,9 @@ void FixChargeEwald::setParameters(int szx_,int szy_,int szz_,float rcut_,int in
 {
     //for now support for only 2^N sizes
     //TODO generalize for non cubic boxes
+    if (rcut_==-1) {
+        rcut_ = state->rCut;
+    }
     if ((szx_!=32)&&(szx_!=64)&&(szx_!=128)&&(szx_!=256)&&(szx_!=512)&&(szx_!=1024)){
         cout << szx_ << " is not supported, sorry. Only 2^N grid size works for charge Ewald\n";
         exit(2);
@@ -840,6 +843,9 @@ void FixChargeEwald::setGridToErrorTolerance(bool printMsg) {
 
 }
 void FixChargeEwald::setError(double targetError, float rcut_, int interpolation_order_) {
+    if (rcut_==-1) {
+        rcut_ = state->rCut;
+    }
     r_cut=rcut_;
     interpolation_order=interpolation_order_;
     errorTolerance = targetError;
@@ -1150,7 +1156,7 @@ void FixChargeEwald::compute(int virialMode) {
                   neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(),
                   state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU, //PASSING NULLPTR TO GPU MAY CAUSE ISSUES
     //ALTERNATIVELy, COULD JUST GIVE THE PARMS SOME OTHER RANDOM POINTER, AS LONG AS IT'S VALID
-                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, virialMode);
+                  neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.virials.d_data.data(), gpd.qs(activeIdx), r_cut, virialMode, nThreadPerBlock(), nThreadPerAtom());
 
 
     CUT_CHECK_ERROR("Ewald_short_range_forces_cu  execution failed");
@@ -1263,7 +1269,7 @@ void FixChargeEwald::singlePointEng(float * perParticleEng) {
 //pair energies
     mapEngToParticles<<<NBLOCK(nAtoms), PERBLOCK>>>(nAtoms, field_energy_per_particle, perParticleEng);
     float *neighborCoefs = state->specialNeighborCoefs;
-    evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), r_cut);
+    evalWrap->energy(nAtoms,nPerRingPoly, gpd.xs(activeIdx), perParticleEng, neighborCounts, grid.neighborlist.data(), grid.perBlockArray.d_data.data(), state->devManager.prop.warpSize, nullptr, 0, state->boundsGPU, neighborCoefs[0], neighborCoefs[1], neighborCoefs[2], gpd.qs(activeIdx), r_cut, nThreadPerBlock(), nThreadPerAtom());
 
 
     CUT_CHECK_ERROR("Ewald_short_range_forces_cu  execution failed");
@@ -1295,13 +1301,13 @@ void export_FixChargeEwald() {
               py::args("state", "handle", "groupHandle"))
         )
         .def("setParameters", setParameters_xyz,
-                (py::arg("szx"),py::arg("szy"),py::arg("szz"), py::arg("r_cut"),py::arg("interpolation_order"))
+                (py::arg("szx"),py::arg("szy"),py::arg("szz"), py::arg("r_cut")=-1,py::arg("interpolation_order")=3)
           
             )
         .def("setParameters", setParameters_xxx,
-                (py::arg("sz"),py::arg("r_cut"),py::arg("interpolation_order"))
+                (py::arg("sz"),py::arg("r_cut")=-1,py::arg("interpolation_order")=3)
             )        
-        .def("setError", &FixChargeEwald::setError, (py::arg("error"), py::arg("rCut"), py::arg("interpolation_order"))
+        .def("setError", &FixChargeEwald::setError, (py::arg("error"), py::arg("rCut")=-1, py::arg("interpolation_order")=3)
             )
         .def("setLongRangeInterval", &FixChargeEwald::setLongRangeInterval, (py::arg("interval")=0))
         ;

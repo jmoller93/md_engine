@@ -42,6 +42,7 @@ class FixLJCut : public FixPair {
 
         //! Compute single point energy
         void singlePointEng(float *);
+        void singlePointEngGroupGroup(float *, uint32_t, uint32_t);
 
         //! Prepare Fix
         /*!
@@ -78,7 +79,6 @@ class FixLJCut : public FixPair {
         std::vector<float> getRCuts();
     public:
         void setEvalWrapper();
-        void setEvalWrapperOrig();
 
         const std::string epsHandle; //!< Handle for parameter epsilon
         const std::string sigHandle; //!< Handle for parameter sigma

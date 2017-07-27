@@ -27,7 +27,7 @@ using std::endl;
 using namespace MD_ENGINE;
 
 namespace py = boost::python;
-State::State() {
+State::State() : units(&dt) {
     groupTags["all"] = (unsigned int) 1;
     is2d = false;
     rCut = RCUT_INIT;
@@ -36,7 +36,6 @@ State::State() {
     maxIdExisting = -1;
     maxExclusions = 0;
     dangerousRebuilds = 0;
-    dt = .005;
     periodicInterval = 50;
     shoutEvery = 5000;
     for (int i=0; i<3; i++) {
@@ -57,8 +56,12 @@ State::State() {
     specialNeighborCoefs[2] = 0;
     rng_is_seeded = false;
     nPerRingPoly  = 1;
-    units.setLJ();//default units are lj
     exclusionMode = EXCLUSIONMODE::DISTANCE;
+
+    nThreadPerAtom = 1;
+    nThreadPerBlock = 256;
+
+    tuneEvery = 1000000;
 
 
 }
@@ -478,6 +481,12 @@ void State::initializeGrid() {
     double maxRCut = getMaxRCut();// ALSO PADDING PLS
     double gridDim = maxRCut + padding;
     gridGPU = GridGPU(this, gridDim, gridDim, gridDim, gridDim, exclusionMode);
+    //testing
+    //nThreadPerBlock = 64;
+    //nThreadPerAtom = 4;
+    //gridGPU.nThreadPerBlock(nThreadPerBlock);
+    //gridGPU.nThreadPerAtom(nThreadPerAtom);
+    //gridGPU.initArraysTune();
 
 }
 
@@ -553,7 +562,6 @@ bool State::prepareForRun() {
     boundsGPU = bounds.makeGPU();
     float maxRCut = getMaxRCut();
     initializeGrid();
-    //gridGPU = grid.makeGPU(maxRCut);  // uses os, ns, ds, dsOrig from AtomGrid
 
     gpd.xsBuffer = GPUArrayGlobal<float4>(nAtoms);
     gpd.vsBuffer = GPUArrayGlobal<float4>(nAtoms);
@@ -692,15 +700,15 @@ bool State::deleteGroup(std::string handle) {
     return true;
 }
 
-bool State::createGroup(std::string handle, py::list forGrp) {
+bool State::createGroup(std::string handle, py::list ids) {
     uint32_t res = addGroupTag(handle);
     if (!res) {
         std::cout << "Tried to create group " << handle
                   << " << that already exists" << std::endl;
         return false;
     }
-    if (py::len(forGrp)) {
-        addToGroupPy(handle, forGrp);
+    if (py::len(ids)) {
+        addToGroupPy(handle, ids);
     }
     return true;
 }
@@ -958,6 +966,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(State_seedRNG_overloads,State::seedRNG,0,
                 .def("preparePIMD", &State::preparePIMD)
                 .def_readwrite("is2d", &State::is2d)
                 .def_readwrite("turn", &State::turn)
+                .def_readwrite("nThreadPerAtom", &State::nThreadPerAtom)
+                .def_readwrite("nThreadPerBlock", &State::nThreadPerBlock)
+                .def_readwrite("tuneEvery", &State::tuneEvery)
                 .def_readwrite("periodicInterval", &State::periodicInterval)
                 .def_readwrite("rCut", &State::rCut)
                 .def_readwrite("nPerRingPoly", &State::nPerRingPoly)
