@@ -295,8 +295,6 @@ __global__ void compute_energy_iso
         if (COMP_CHARGES) {
             qi = qs[atomIdx];
         }
-        float4 posWhole = xs[atomIdx];
-        int type = __float_as_int(posWhole.w);
         float3 pos = make_float3(posWhole);
 
         float engSum = 0;
@@ -359,7 +357,7 @@ __global__ void compute_energy_iso
                 //compute charge pair force if necessary
                 float qj = qs[otherIdx];
                 float eng = chargeEval.energy(lenSqr, qi, qj, multiplier, molParam);
-                sumEng += eng;
+                engSum += eng;
             }
         }   
         if (MULTITHREADPERATOM) {
@@ -460,7 +458,8 @@ __global__ void compute_energy_iso_group_group
 
         }
         float4 posWhole = xs[idx];
-        int type = __float_as_int(posWhole.w);
+        int type = __float_as_int(posWhole.w) >> 0 & 0xFF;
+        int molId = __float_as_int(posWhole.w) >> 16 & 0xFF;
         float qi;
         if (COMP_CHARGES) {
             qi = qs[idx];
@@ -500,7 +499,8 @@ __global__ void compute_energy_iso_group_group
             if (otherGroupTag & groupTagCheck) {
 
                 float4 otherPosWhole = xs[otherIdx];
-                int otherType = __float_as_int(otherPosWhole.w);
+                int otherType = __float_as_int(otherPosWhole.w) >> 0 & 0xFF;
+                int otherMolId = __float_as_int(otherPosWhole.w) >> 16 & 0xFF;
                 float3 otherPos = make_float3(otherPosWhole);
                 float3 dr = bounds.minImage(pos - otherPos);
                 float lenSqr = lengthSqr(dr);
@@ -517,8 +517,15 @@ __global__ void compute_energy_iso_group_group
                     engSum += pairEval.energy(params_pair, lenSqr, multiplier);
                 }
                 if (COMP_CHARGES && lenSqr < qCutoffSqr) {
+                    float molParam = 0;
+                    if(molId > 0 && otherMolId > 0 && molId != otherMolId) {
+                        molParam = 1.0f;
+                    }
+                    else if (molId == 0 || otherMolId == 0 && molId != otherMolId) {
+                        molParam = 1.666667f;
+                    }
                     float qj = qs[otherIdx];
-                    float eng = chargeEval.energy(lenSqr, qi, qj, multiplier);
+                    float eng = chargeEval.energy(lenSqr, qi, qj, multiplier, molParam);
                     //printf("len is %f\n", sqrtf(lenSqr));
                     //printf("qi qj %f %f\n", qi, qj);
                     //printf("eng is %f\n", eng);

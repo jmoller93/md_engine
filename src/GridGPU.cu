@@ -37,6 +37,10 @@ void GridGPU::initArraysTune() {
     perBlockArray = GPUArrayGlobal<uint32_t>(NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerAtom()) + 1);
     // not +1 on this one, isn't cumul sum
     perBlockArray_maxNeighborsInBlock = GPUArrayDeviceGlobal<uint16_t>(NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerAtom()));
+    //std::cout<<maxExclusionsPerAtom*(nThreadPerBlock()/nThreadPerAtom())*NBLOCKTEAM(nRingPoly,nThreadPerBlock(),nThreadPerAtom())<<std::endl;
+    //std::cout<<maxExclusionsPerAtom*(nThreadPerBlock()/nThreadPerAtom())*NBLOCKVAR(nRingPoly,nThreadPerBlock())<<std::endl;
+    exclusionIds_global = GPUArrayDeviceGlobal<uint32_t>(maxExclusionsPerAtom*(nThreadPerBlock()/nThreadPerAtom())*NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerAtom()));
+    //exclusionIds_global = GPUArrayDeviceGlobal<uint32_t>(maxExclusionsPerAtom*(nThreadPerBlock()/nThreadPerAtom())*NBLOCKVAR(nRingPoly, nThreadPerBlock()));
 
 }
 
@@ -91,12 +95,13 @@ GridGPU::GridGPU(State *state_, float dx_, float dy_, float dz_, float neighCuto
     boundsLastBuild = BoundsGPU(make_float3(0, 0, 0), make_float3(0, 0, 0), make_float3(0, 0, 0));
     setBounds(state->boundsGPU);
   
+    exclusionMode = exclusionMode_;
+    handleExclusions();
+
     initArrays();
     initStream();
     numChecksSinceLastBuild = 0;
-    exclusionMode = exclusionMode_;
 
-    handleExclusions();
 }
 
 GridGPU::~GridGPU() {
@@ -507,20 +512,19 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
     int idx = GETIDX();
     float4 posWhole;
     int myId;
-    uint *myArray;
+    uint32_t *myArray;
     int exclIdxLo_shr, exclIdxHi_shr, numExclusions;
     int nthRPInBlock = threadIdx.x/nThreadPerRP;
     exclIdxLo_shr = nthRPInBlock * maxExclusionsPerAtom;
+    //I believe the global memory placement is the same for both
     if (usingShared) {
         myArray = exclusionIds_shr;
     } else {
-        myArray = exclusionIds_global + maxExclusionsPerAtom*PERBLOCK*blockIdx.x;
+        myArray = exclusionIds_global + maxExclusionsPerAtom*(blockDim.x/nThreadPerRP)*blockIdx.x;
     }
 
 
-    if (idx < nRingPoly) {
-        posWhole = xs[idx];
-        myId = ids[idx*nPerRingPoly]; //in PIMD, I just need the id of _one_ of the atoms in my ring poly b/c all the 1-2,3,4 dists are the same
+    posWhole = xs[idx];
     bool validThread = idx < nRingPoly * nThreadPerRP;
     //printf("N RING POLY IS %d my tid %d nthreadper %d valid %d, \n", nRingPoly, threadIdx.x, nThreadPerRP, (int)validThread);
     if (validThread) {
@@ -529,12 +533,14 @@ __global__ void assignNeighbors(float4 *xs, int nRingPoly, int nPerRingPoly, uin
         int exclIdxLo = exclusionIndexes[myId];
         int exclIdxHi = exclusionIndexes[myId+1];
         numExclusions = exclIdxHi - exclIdxLo;
+        exclIdxHi_shr = exclIdxLo_shr + numExclusions;
         if (myIdxInTeam==0) {
             for (int i=exclIdxLo; i<exclIdxHi; i++) {
                 uint exclusion = exclusionIds[i];
-                myArray[maxExclusionsPerAtom*threadIdx.x + i-exclIdxLo] = exclusion;
-                //printf("I am thread %d and I am copying %u from global %d to shared %d\n",
-                //threadIdx.x, exclusion, i, maxExclusionsPerAtom*threadIdx.x+i-exclIdxLo);
+                myArray[exclIdxLo_shr + i-exclIdxLo] = exclusion;
+                //if (MULTITHREADPERATOM)
+                //    printf("I am thread %d and I am copying %u from global %d to shared %d\n",
+                //    nthRPInBlock, exclusion, i, maxExclusionsPerAtom*nthRPInBlock+i-exclIdxLo);
                 //printf("I am thread %d and I am copying to index %u and size is %d\n",
                 //threadIdx.x, maxExclusionsPerAtom*PERBLOCK*blockIdx.x+maxExclusionsPerAtom*threadIdx.x+i-exclIdxLo);
             }
@@ -877,23 +883,6 @@ void GridGPU::periodicBoundaryConditions(float neighCut, bool forceBuild) {
         } else if (totalNumNeighbors < neighborlist.size() * 0.5) {
             neighborlist = GPUArrayDeviceGlobal<uint>(totalNumNeighbors*1.5);
         }
-        bool usingShared = state->devManager.prop.sharedMemPerBlock >= PERBLOCK*maxExclusionsPerAtom*sizeof(uint);
-        if (usingShared) {
-            assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
-                    centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
-                    perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
-                    bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
-                    exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(),maxExclusionsPerAtom, usingShared
-                    );
-        } else {
-            assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, sizeof(uint)>>>(
-                    centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
-                    perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
-                    bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
-                    exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(),maxExclusionsPerAtom, usingShared
-                    );
-
-        }
         /*
     
         assignNeighbors<<<NBLOCK(nRingPoly), PERBLOCK, PERBLOCK*maxExclusionsPerAtom*sizeof(uint)>>>(
@@ -904,20 +893,43 @@ void GridGPU::periodicBoundaryConditions(float neighCut, bool forceBuild) {
         ); //PER RP CENTROID
         */
 
-        if (nThreadPerRP==1) {
-            assignNeighbors<0><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), (nThreadPerBlock()/nThreadPerRP)*maxExclusionsPerAtom*sizeof(uint32_t)>>>(
-                            centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
-                            perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
-                            bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
-                            exclusionIndexes.data(), exclusionIds.data(), maxExclusionsPerAtom, nThreadPerRP
-                            ); //PER RP CENTROID
-        } else {
-            assignNeighbors<1><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), (nThreadPerBlock()/nThreadPerRP)*maxExclusionsPerAtom*sizeof(uint32_t) + nThreadPerBlock()*sizeof(uint32_t)>>>(
-                            centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
-                            perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
-                            bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
-                            exclusionIndexes.data(), exclusionIds.data(), maxExclusionsPerAtom, nThreadPerRP
-                            ); //PER RP CENTROID
+        bool usingShared = state->devManager.prop.sharedMemPerBlock >= (nThreadPerBlock()/nThreadPerRP*maxExclusionsPerAtom*sizeof(uint32_t) + nThreadPerBlock()*sizeof(uint32_t));
+        //bool usingShared = false;
+        if (usingShared) {
+            if (nThreadPerRP==1) {
+                assignNeighbors<0><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), (nThreadPerBlock()/nThreadPerRP)*maxExclusionsPerAtom*sizeof(uint32_t)>>>(
+                                centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
+                                perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
+                                bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
+                                exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(), maxExclusionsPerAtom, nThreadPerRP, usingShared
+                                ); //PER RP CENTROID
+            } else {
+                assignNeighbors<1><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), (nThreadPerBlock()/nThreadPerRP)*maxExclusionsPerAtom*sizeof(uint32_t) + nThreadPerBlock()*sizeof(uint32_t)>>>(
+                                centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
+                                perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
+                                bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
+                                exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(), maxExclusionsPerAtom, nThreadPerRP, usingShared
+                                ); //PER RP CENTROID
+                std::cout<<"Heliiilo"<<std::endl;
+            }
+        }
+        //Store everything in global memory here
+        else {
+            if (nThreadPerRP==1) {
+                assignNeighbors<0><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), nThreadPerBlock()*sizeof(uint32_t)>>>(
+                                centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
+                                perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
+                                bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
+                                exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(), maxExclusionsPerAtom, nThreadPerRP, usingShared
+                                ); //PER RP CENTROID
+            } else {
+                assignNeighbors<1><<<NBLOCKTEAM(nRingPoly, nThreadPerBlock(), nThreadPerRP), nThreadPerBlock(), nThreadPerBlock()*sizeof(uint32_t)>>>(
+                                centroids, nRingPoly, nPerRingPoly, state->gpd.ids(gridIdx),
+                                perCellArray.d_data.data(), perBlockArray.d_data.data(), os, ds, ns,
+                                bounds.periodic, trace, neighCut*neighCut, neighborlist.data(), warpSize,
+                                exclusionIndexes.data(), exclusionIds.data(), exclusionIds_global.data(), maxExclusionsPerAtom, nThreadPerRP, usingShared
+                                ); //PER RP CENTROID
+            }
         }
 
         /*
@@ -1153,13 +1165,14 @@ void GridGPU::handleExclusionsDistance() {
         maxExclusionsPerAtom = std::fmax(maxExclusionsPerAtom, idxs.back() - idxs[idxs.size()-2]);
     }
 
+    //std::cout<<maxExclusionsPerAtom<<std::endl;
     // std::cout << "max excl per atom is " << maxExclusionsPerAtom << std::endl;
     //these are start/end idxs of each atom's exclusions
     exclusionIndexes = GPUArrayDeviceGlobal<int>(idxs.size());
     exclusionIndexes.set(idxs.data());
     exclusionIds = GPUArrayDeviceGlobal<uint>(excludedById.size());
     exclusionIds.set(excludedById.data());
-    exclusionIds_global = GPUArrayDeviceGlobal<uint>(maxExclusionsPerAtom*PERBLOCK*NBLOCK(state->atoms.size()));
+    //exclusionIds_global = GPUArrayDeviceGlobal<uint>(maxExclusionsPerAtom*nThreadPerBlock()*NBLOCK(state->atoms.size()));
     //atoms is sorted by id.  list of ids may be sparse, so need to make sure
     //there's enough shared memory for PERBLOCK _atoms_, not just PERBLOCK ids
     //(when calling assign exclusions kernel)

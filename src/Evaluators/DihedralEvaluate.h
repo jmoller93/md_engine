@@ -69,9 +69,9 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
 
         float scValues[3]; //???, is s1, s2, s12 in lammps
         for (int i=0; i<2; i++) {
-            float x = max(1 - c12Mags[i]*c12Mags[i], 0.0f);
-            float sqrtVal = max(sqrtf(x), EPSILON);
-            scValues[i] = 1.0 / sqrtVal;
+            float x = max(1 - c12Mags[i]*c12Mags[i], 0.0001f);
+            float sqrtVal = max(sqrtf(x), 0.0001f);
+            scValues[i] = 1.0f / sqrtVal;
         }
         scValues[2] = scValues[0] * scValues[1];
 
@@ -90,10 +90,10 @@ __global__ void compute_force_dihedral(int nDihedrals, float4 *xs, float4 *fs, i
         float dx = dot(cVector, directors[2]) * invLens[2] / cVectorLen;
         //printf("c xyz %f %f %f directors xyz %f %f %f\n", cVector.x, cVector.y, cVector.z, directors[2].x, directors[2].y, directors[2].z);
         //printf("c is %f\n", c);
-        if (c > 1.0f) {
-            c = 1.0f;
-        } else if (c < -1.0f) {
-            c = -1.0f;
+        if (c > 0.9999f) {
+            c = 0.9999f;
+        } else if (c < -0.9999f) {
+            c = -0.9999f;
         }
         float phi = acosf(c);
          //printf("phi is %f\n", phi);
