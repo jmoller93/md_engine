@@ -51,10 +51,12 @@ BOOST_PYTHON_MODULE(DASH) {
     export_FixBondHarmonicExtend();
     export_FixBondFENE();
     export_FixBondGoLike();
+    export_FixBondQuartic();
     export_BondHarmonic();
     export_BondHarmonicExtend();
     export_BondFENE();
     export_BondGoLike();
+    export_BondQuartic();
     
     export_FixAngleBaseStacking();
     export_FixAngleHarmonic();

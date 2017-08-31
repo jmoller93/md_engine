@@ -92,7 +92,7 @@ __global__ void compute_force_iso
         if (COMP_CHARGES) {
             qi = qs[atomIdx];
         }
-        float4 posWhole = xs[idx];
+        float4 posWhole = xs[atomIdx];
         //unpack the w term to check molecule ids
         int type = __float_as_int(posWhole.w) >> 0 & 0xFF;
         int molId = __float_as_int(posWhole.w) >> 16 & 0xFF;
@@ -113,6 +113,8 @@ __global__ void compute_force_iso
             int nlistIdx;
             if (MULTITHREADPERATOM) {
                 nlistIdx = baseIdx + myIdxInTeam + warpSize * (nthNeigh/nThreadPerAtom);
+                //if(nlistIdx > 4600)
+                    //printf("nlistIdx is %d\n", nlistIdx);
             } else {
                 nlistIdx = baseIdx + warpSize * nthNeigh;
             }
@@ -126,10 +128,10 @@ __global__ void compute_force_iso
             // Extract corresponding index for pair interaction (at same time slice)
             uint otherRPIdx = otherIdxRaw & EXCL_MASK;
 	        uint otherIdx   = nPerRingPoly*otherRPIdx + beadIdx;  // atom = P*ring_polymer + k, k = 0,...,P-1
-         //   if (otherIdx >= nAtoms) {
-         //       printf("otherIdx %d natom %d nNeigh %d nthNeigh %d myIdxInTeam %d\n", otherIdx, nAtoms, numNeigh, nthNeigh, myIdxInTeam);
-          //      continue;
-          //  }
+            if (otherIdx >= nAtoms) {
+                printf("otherIdx %d natom %d nNeigh %d nthNeigh %d myIdxInTeam %d\n", otherIdx, nAtoms, numNeigh, nthNeigh, myIdxInTeam);
+                continue;
+            }
             float4 otherPosWhole = xs[otherIdx];
             //printf("thread %d nlistidx %d other idx %d\n", idx, nlistIdx, otherIdx);
 
@@ -284,7 +286,7 @@ __global__ void compute_energy_iso
         } else {
             baseIdx = baseNeighlistIdxFromRPIndex(cumulSumMaxPerBlock, warpSize, ringPolyIdx);
         }
-        float4 posWhole = xs[idx];
+        float4 posWhole = xs[atomIdx];
         //int type = * (int *) &posWhole.w;
         int type = __float_as_int(posWhole.w) >> 0 & 0xFF;
         int molId = __float_as_int(posWhole.w) >> 16 & 0xFF;

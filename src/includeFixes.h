@@ -4,6 +4,7 @@
 #include "FixCrossStack.h"
 #include "FixBondHarmonic.h"
 #include "FixBondHarmonicExtend.h"
+#include "FixBondQuartic.h"
 #include "FixBondFENE.h"
 #include "FixAngleBaseStacking.h"
 #include "FixBondGoLike.h"

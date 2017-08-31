@@ -68,6 +68,7 @@ public:
     GPUArrayGlobal<uint32_t> perCellArray;      //!< Number of atoms in a given grid cell, later starting index of cell in neighborlist
     GPUArrayGlobal<uint32_t> perBlockArray;     //!< Number of neighbors in a GPU block
     GPUArrayDeviceGlobal<uint16_t> perBlockArray_maxNeighborsInBlock; //!< array for holding max # neighs of atoms in a GPU block
+    GPUArrayDeviceGlobal<uint32_t> exclusionIds_global;    //!< List of excluded atom IDs
     GPUArrayGlobal<uint16_t> perAtomArray;      //!< For each atom, store the place in the grid
     GPUArrayDeviceGlobal<float4> xsLastBuild;   //!< Contains the atom positions at
     GPUArrayDeviceGlobal<float4> rpCentroids;
@@ -181,7 +182,6 @@ public:
     //ExclusionList exclusionList;
     GPUArrayDeviceGlobal<int> exclusionIndexes; //!< List of exclusion indices
     GPUArrayDeviceGlobal<uint> exclusionIds;    //!< List of excluded atom IDs
-    GPUArrayDeviceGlobal<uint> exclusionIds_global;    //!< List of excluded atom IDs
     int maxExclusionsPerAtom;           //!< Maximum number of exclusions for a
                                         //!< single atom
     int numChecksSinceLastBuild;        //!< Number of calls to
